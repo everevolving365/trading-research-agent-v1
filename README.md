@@ -1,4 +1,4 @@
-# EverEvolving Trading Agent
+# EverEvolving Researche Trading Agent
 
 A command-line AI research agent. You type an asset (any class), it pulls 1-minute OHLCV data, you describe a strategy in plain English, Gemini turns it into a Python backtest, you run it, and you get clean metrics + a P&L equity curve.
 
