@@ -1,0 +1,21 @@
+right so the way I trade this, and I've been doing it for about two years now on the
+micro nasdaq, MNQ, is I watch the opening range. so from 8:30 to 9:30 central time I
+just let it build, I'm not touching anything, I'm literally just watching where the high
+and the low of that first hour end up. that's my range.
+
+then from 9:30 to 3:00 that's my window, that's when I'm actually looking for the trade.
+what I want to see is price take out one side of that range, so it breaks the high or it
+breaks the low, doesn't matter which, and then it comes back inside. that's the whole
+thing. that's the setup. if it breaks the high and comes back in I'm short, if it breaks
+the low and comes back in I'm long. the break can be just the wick, it doesn't have to
+close outside, but the return back inside I want to see on a candle close. I wait for the
+candle close on the 5 minute chart, I don't jump in early, I've lost too much money
+jumping in early.
+
+my stop is 25 points, that's just what it's always been. target is 50 points. one contract.
+I do maximum 2 trades a day, if the first two don't work I'm done for the day, I walk away.
+commission is 2 dollars a side and I usually get about 1 tick of slippage on these.
+
+if I'm still in a trade at 3 I just flatten it, I'm out, I don't hold anything overnight
+ever. and if a second signal fires while I'm already in something I just ignore it, I'm
+only ever in one trade at a time. I don't scale in, I don't add, none of that.

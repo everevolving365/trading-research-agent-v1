@@ -1,0 +1,7 @@
+{
+  "_comment": "Client rejects every example before 10:30 local. The loop should move the signal window start, not silently keep showing them.",
+  "default_approve": true,
+  "rules": {
+    "reject_before_minute": 630
+  }
+}

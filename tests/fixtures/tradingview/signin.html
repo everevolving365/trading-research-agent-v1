@@ -1,0 +1,12 @@
+<!-- Mock of TradingView's sign-in page. Structure mirrors the real one so the
+     Operator's selectors, waits and retry logic are exercised without an
+     account. This is a FIXTURE: it is not TradingView and does not talk to it. -->
+<html><body>
+  <h1 id="page-title">Sign in</h1>
+  <form id="signin-form">
+    <input id="username" name="username" type="text" />
+    <input id="password" name="password" type="password" />
+    <button id="signin-submit">Sign in</button>
+  </form>
+  <div id="login-error"></div>
+</body></html>

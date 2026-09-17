@@ -1,0 +1,7 @@
+{
+  "_comment": "Synthetic approver fixture: stands in for a human reviewing annotated charts. Section 2.2 -- no human eyes are needed to build or verify the visual confirmation loop.",
+  "default_approve": true,
+  "rules": {
+    "reject_side": "long"
+  }
+}
