@@ -227,3 +227,50 @@ Reasoning: (a) would leave a silent correctness bug waiting for an upgrade, and
 the failure mode is the worst kind — the check runs, reports clean, and finds
 nothing.
 Reversible: no reason to.
+
+---
+
+## D-015 — Recorded sources rank last in the live ladder
+Date: 2026-09-17
+Context: the resolver sorted by availability, then reliability, then cost. A
+fixture has reliability 1.0 and zero cost, so it outranked every real source —
+the agent would have served recorded bars instead of the market and reported
+them as a normal load.
+Options: (a) special-case fixtures in the loader; (b) mark recorded sources as
+last-resort in the registry and sort them after every live source.
+Chosen: (b). `fixtures_only=True` still forces them, which is how the tests and
+the demo run offline.
+Reasoning: the failure was silent, and "stale data reported as live" is the kind
+of thing Law One exists to prevent.
+Reversible: yes.
+Found by: a test asserting the ladder prefers a real source.
+
+---
+
+## D-016 — A missing session is a gap; a truncated session is reported too
+Date: 2026-09-17
+Context: gap detection forgave any jump that crossed a date change, on the
+grounds that markets close overnight. That also forgave an entire absent trading
+day, and a session that simply stopped halfway through scored a clean 1.00.
+Options: (a) leave it; (b) count skipped trading days using the instrument's own
+calendar, and separately compare each session's bar count against the typical
+one.
+Chosen: (b). The first and last sessions are exempt from the short-session check
+because a dataset almost always starts and ends mid-session, and flagging that
+would cry wolf on every clean file.
+Reasoning: a quality score that says 1.00 on a dataset with a day missing is
+worse than no quality score, because it is trusted.
+Reversible: yes.
+
+---
+
+## D-017 — Rule pack notes are block scalars
+Date: 2026-09-17
+Context: `- End-of-day trailing drawdown: the threshold moves...` in a YAML list
+is parsed as a mapping key, not a string. `takeprofit.yaml` failed to load at
+all, and nothing noticed until a test loaded every pack rather than just Topstep.
+Options: (a) remove the colons; (b) write every note as a `>-` block scalar.
+Chosen: (b), and the test now loads *every* firm rather than the default one.
+Reasoning: rule packs are data the owner will edit. They must tolerate ordinary
+prose, and the test must cover all of them or the next one added breaks silently.
+Reversible: no reason to.

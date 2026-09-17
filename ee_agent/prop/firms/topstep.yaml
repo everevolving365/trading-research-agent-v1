@@ -78,7 +78,7 @@ flat_by:
   time: '15:10'    # positions must be flat before the close each session
 
 notes:
-  - The trailing drawdown follows the account's PEAK equity intraday, not the closing balance.
-    A trade that goes 800 in profit and comes back raises the threshold and does not lower it.
-  - Cross-account hedging is prohibited. The owner has been formally warned for exactly this.
-    The global position ledger refuses such orders before they reach any API (hard rule 3).
+  - >-
+      The trailing drawdown follows the account's PEAK equity intraday, not the closing balance. A trade that goes 800 in profit and comes back raises the threshold and does not lower it.
+  - >-
+      Cross-account hedging is prohibited. The owner has been formally warned for exactly this. The global position ledger refuses such orders before they reach any API (hard rule 3).

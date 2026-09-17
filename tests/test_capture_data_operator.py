@@ -235,8 +235,52 @@ def test_quality_score_falls_with_defects():
 
     base = generate(GenSpec(symbol="MNQ", timeframe="5m", days=6, seed=43))
     _clean, good = check_and_clean(base)
-    _dirty, bad = check_and_clean(inject_gap(base, 30, 60))
-    assert bad.score < good.score
+    assert good.score == 1.0, good.summary()
+    # Interior session: the first and last are exempt because a dataset almost
+    # always starts and ends mid-session, and flagging that would cry wolf on
+    # every clean file.
+    _dirty, bad = check_and_clean(inject_gap(base, len(base) // 2, 60))
+    assert bad.score < good.score, bad.summary()
+
+
+def test_a_missing_trading_day_is_not_forgiven_as_an_overnight_break():
+    """A whole absent session must not score clean just because the jump lands
+    on a date change."""
+    from ee_agent.data.bars import Bars
+    from ee_agent.data.integrity import check_and_clean
+    from ee_agent.data.synthetic import GenSpec, generate
+
+    base = generate(GenSpec(symbol="MNQ", timeframe="5m", days=8, seed=44))
+    days = sorted(set(str(d) for d in base.local_date))
+    drop = days[4]
+    kept = base.df[[str(d) != drop for d in base.local_date]].reset_index(drop=True)
+    holed = Bars(symbol="MNQ", timeframe="5m", df=kept, tz=base.tz, source="holed")
+    _clean, report = check_and_clean(holed)
+    assert report.gaps, f"an entire missing session was reported clean: {report.summary()}"
+    assert report.score < 1.0
+
+
+def test_a_truncated_session_is_reported():
+    from ee_agent.data.bars import Bars
+    from ee_agent.data.integrity import check_and_clean
+    from ee_agent.data.synthetic import GenSpec, generate
+
+    base = generate(GenSpec(symbol="MNQ", timeframe="5m", days=8, seed=45))
+    days = sorted(set(str(d) for d in base.local_date))
+    target = days[3]
+    keep = []
+    seen = 0
+    for i in range(len(base)):
+        if str(base.local_date[i]) == target:
+            seen += 1
+            if seen > 20:  # session stops a fifth of the way in
+                continue
+        keep.append(i)
+    short = Bars(symbol="MNQ", timeframe="5m", df=base.df.iloc[keep].reset_index(drop=True),
+                 tz=base.tz, source="short")
+    _clean, report = check_and_clean(short)
+    assert report.short_sessions, f"a half-length session was reported clean: {report.summary()}"
+    assert report.short_sessions[0][0] == target
 
 
 def test_dst_transitions_are_detected():

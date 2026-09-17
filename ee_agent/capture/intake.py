@@ -230,14 +230,23 @@ def read_screenshots(paths: list[str | Path], model=None) -> list[ScreenshotHint
     for raw in paths:
         path = Path(raw)
         hint = ScreenshotHint(path=str(path))
+        # Split on separators first: "MNQ_5m_2026-03-02" is the normal way people
+        # name these, and `\b` does not match between "MNQ" and "_" because an
+        # underscore is a word character.
         stem = path.stem
-        symbol_match = re.search(r"\b(MNQ|NQ|ES|MES|CL|SPY|QQQ|BTCUSDT|ETHUSDT|EURUSD)\b", stem, re.I)
-        if symbol_match:
-            hint.symbol = symbol_match.group(1).upper()
-        tf_match = re.search(r"\b(\d+)\s*(m|min|h|hour)\b", stem, re.I)
-        if tf_match:
-            hint.timeframe = f"{tf_match.group(1)}{'m' if tf_match.group(2).lower().startswith('m') else 'h'}"
-        for ts in re.findall(r"\d{4}[-_]\d{2}[-_]\d{2}", stem):
+        tokens = [t for t in re.split(r"[\s_\-.]+", stem) if t]
+        for token in tokens:
+            if re.fullmatch(r"(MNQ|NQ|ES|MES|CL|SPY|QQQ|BTCUSDT|ETHUSDT|EURUSD)", token, re.I):
+                hint.symbol = token.upper()
+                break
+        for token in tokens:
+            tf_match = re.fullmatch(r"(\d+)\s*(m|min|h|hour)", token, re.I)
+            if tf_match:
+                hint.timeframe = (
+                    f"{tf_match.group(1)}{'m' if tf_match.group(2).lower().startswith('m') else 'h'}"
+                )
+                break
+        for ts in re.findall(r"\d{4}[-_]\d{2}[-_]\d{2}", stem.replace(" ", "")):
             hint.timestamps.append(ts.replace("_", "-"))
         if model is not None:  # pragma: no cover - needs a vision model
             try:

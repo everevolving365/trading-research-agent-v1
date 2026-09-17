@@ -26,6 +26,7 @@ class QualityReport:
     gaps: list[tuple[str, str, int]] = field(default_factory=list)
     zero_volume_bars: int = 0
     inverted_bars: int = 0
+    short_sessions: list[tuple[str, int, int]] = field(default_factory=list)
     dst_transitions: list[str] = field(default_factory=list)
     stitched_contracts: list[str] = field(default_factory=list)
     adjustments: list[str] = field(default_factory=list)
@@ -47,6 +48,10 @@ class QualityReport:
             "missing_bars_estimate": self.missing_bar_estimate,
             "zero_volume_bars": self.zero_volume_bars,
             "inverted_bars": self.inverted_bars,
+            "short_sessions": [
+                {"day": day, "bars": actual, "expected": expected}
+                for day, actual, expected in self.short_sessions
+            ],
             "dst_transitions": self.dst_transitions,
             "stitched_contracts": self.stitched_contracts,
             "adjustments": self.adjustments,
@@ -69,6 +74,12 @@ class QualityReport:
             )
         if self.zero_volume_bars:
             lines.append(f"          {self.zero_volume_bars} zero-volume bar(s)")
+        if self.short_sessions:
+            worst = sorted(self.short_sessions, key=lambda s: s[1] - s[2])[:3]
+            lines.append(
+                f"          {len(self.short_sessions)} short session(s); worst: "
+                + ", ".join(f"{day} had {actual} of ~{expected} bars" for day, actual, expected in worst)
+            )
         if self.inverted_bars:
             lines.append(f"          {self.inverted_bars} bar(s) with high < low or close outside range")
         for note in self.notes:
@@ -91,9 +102,12 @@ def check_and_clean(
     n_before = len(df)
 
     # ---- out of order -----------------------------------------------------
+    # Bars sorts on construction and records how many inversions it fixed;
+    # anything still out of order here was introduced after that.
     ts = df["ts"].to_numpy()
     reordered = int(np.sum(ts[1:] < ts[:-1])) if len(ts) > 1 else 0
-    if reordered:
+    reordered += int(getattr(bars, "reordered_on_load", 0))
+    if ts.size > 1 and np.any(ts[1:] < ts[:-1]):
         df = df.sort_values("ts", kind="stable")
 
     # ---- duplicates -------------------------------------------------------
@@ -138,6 +152,12 @@ def check_and_clean(
                 continue
             report.gaps.append((a.isoformat(), b.isoformat(), missing))
 
+    # ---- short sessions ---------------------------------------------------
+    # A jump that lands on the next trading day is forgiven as an overnight
+    # break, so a session that simply STOPS halfway through would otherwise
+    # score a clean 1.00. Compare every session against the typical one.
+    report.short_sessions = _short_sessions(cleaned)
+
     # ---- bar sanity -------------------------------------------------------
     inverted = (
         (cleaned.high < cleaned.low)
@@ -165,6 +185,9 @@ def check_and_clean(
     penalty += min(0.10, reordered / n * 5)
     penalty += min(0.20, report.inverted_bars / n * 10)
     penalty += min(0.10, report.zero_volume_bars / n * 0.5)
+    if report.short_sessions:
+        missing = sum(expected - actual for _day, actual, expected in report.short_sessions)
+        penalty += min(0.30, missing / n)
     report.score = round(max(0.0, 1.0 - penalty), 4)
     cleaned.quality_score = report.score
     cleaned.quality_notes = [report.summary()]
@@ -174,11 +197,73 @@ def check_and_clean(
 
 
 def _is_session_boundary(bars: Bars, i: int) -> bool:
-    """A gap that spans a date change or a weekend is a closed market, not a hole."""
-    a_date, b_date = bars.local_date[i], bars.local_date[i + 1]
-    if a_date != b_date:
+    """Is this jump a closed market, or a hole?
+
+    An overnight or weekend break is not missing data. An entire missing
+    *trading session* is, and forgiving every jump that crosses midnight would
+    hide exactly that -- a dataset with a whole day absent would score a clean
+    1.00.
+    """
+    from datetime import date as _date, timedelta
+
+    a_date, b_date = str(bars.local_date[i]), str(bars.local_date[i + 1])
+    if a_date == b_date:
+        return False
+    try:
+        start, end = _date.fromisoformat(a_date), _date.fromisoformat(b_date)
+    except ValueError:  # pragma: no cover - non-ISO calendar labels
         return True
-    return False
+
+    instrument = None
+    try:
+        from ee_agent.instruments.registry import registry
+
+        if registry().has(bars.symbol):
+            instrument = registry().get(bars.symbol)
+    except Exception:  # pragma: no cover - registry unavailable
+        instrument = None
+
+    def trades_on(day: _date) -> bool:
+        if instrument is not None:
+            return instrument.is_trading_day(day)
+        return day.weekday() < 5
+
+    skipped = []
+    cursor = start + timedelta(days=1)
+    while cursor < end:
+        if trades_on(cursor):
+            skipped.append(cursor)
+        cursor += timedelta(days=1)
+    # No trading day was skipped: this is just the market being shut.
+    return not skipped
+
+
+def _short_sessions(bars: Bars, threshold: float = 0.7, min_sessions: int = 4) -> list[tuple[str, int, int]]:
+    """Sessions holding materially fewer bars than a typical one.
+
+    The first and last sessions are skipped: a dataset almost always starts and
+    ends mid-session, and reporting that as a defect would cry wolf on every
+    clean file.
+    """
+    import collections
+
+    if len(bars) == 0:
+        return []
+    counts = collections.Counter(str(d) for d in bars.local_date)
+    days = sorted(counts)
+    if len(days) < min_sessions:
+        return []
+    interior = days[1:-1]
+    if not interior:
+        return []
+    typical = int(np.median([counts[d] for d in interior]))
+    if typical <= 0:
+        return []
+    out: list[tuple[str, int, int]] = []
+    for day in interior:
+        if counts[day] < typical * threshold:
+            out.append((day, counts[day], typical))
+    return out
 
 
 def _dst_transitions(bars: Bars) -> list[str]:

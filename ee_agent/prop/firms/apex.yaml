@@ -45,5 +45,5 @@ accounts:
 contract_equivalents: {MNQ: 1, MES: 1, NQ: 10, ES: 10, CL: 10}
 flat_by: {timezone: America/New_York, time: '16:59'}
 notes:
-  - The trailing drawdown does NOT stop at the initial balance on evaluations; it keeps
-    trailing until the account is funded.
+  - >-
+      The trailing drawdown does NOT stop at the initial balance on evaluations; it keeps trailing until the account is funded.

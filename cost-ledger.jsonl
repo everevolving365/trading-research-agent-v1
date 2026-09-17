@@ -52,3 +52,72 @@
 {"ts": "2026-09-17T05:24:33.501447+00:00", "operation": "monte_carlo", "estimated_usd": 8e-05, "actual_usd": 8e-05, "detail": {"detail": {"cpu.core_minute": 8e-05}}}
 {"ts": "2026-09-17T05:24:47.661187+00:00", "operation": "synthetic", "estimated_usd": 0.001024, "actual_usd": 0.001024, "detail": {"detail": {"cpu.core_minute": 0.00102366}}}
 {"ts": "2026-09-17T05:25:37.371032+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}
+{"ts": "2026-09-17T05:37:27.911025+00:00", "operation": "backtest", "estimated_usd": 2.4e-05, "actual_usd": 2.4e-05, "detail": {"detail": {"cpu.core_minute": 2.4e-05}}}
+{"ts": "2026-09-17T05:37:35.574680+00:00", "operation": "backtest", "estimated_usd": 2.4e-05, "actual_usd": 2.4e-05, "detail": {"detail": {"cpu.core_minute": 2.4e-05}}}
+{"ts": "2026-09-17T05:37:48.126675+00:00", "operation": "backtest", "estimated_usd": 0.00012, "actual_usd": 0.00012, "detail": {"detail": {"cpu.core_minute": 0.00012}}}
+{"ts": "2026-09-17T05:37:57.809324+00:00", "operation": "visual_confirmation", "estimated_usd": 0.015, "actual_usd": 0.015, "detail": {"detail": {"vision.image_downscaled": 0.015}}}
+{"ts": "2026-09-17T05:40:50.497350+00:00", "operation": "operator_session", "estimated_usd": 0.0, "actual_usd": 0.0, "detail": {"detail": {"vision.image_downscaled": 0.0}}}
+{"ts": "2026-09-17T05:40:50.528470+00:00", "operation": "operator_session", "estimated_usd": 0.0, "actual_usd": 0.0, "detail": {"detail": {"vision.image_downscaled": 0.0}}}
+{"ts": "2026-09-17T05:40:56.244643+00:00", "operation": "backtest", "estimated_usd": 0.00012, "actual_usd": 0.00012, "detail": {"detail": {"cpu.core_minute": 0.00012}}}
+{"ts": "2026-09-17T05:41:05.824019+00:00", "operation": "backtest", "estimated_usd": 0.0001, "actual_usd": 0.0001, "detail": {"detail": {"cpu.core_minute": 0.0001}}}
+{"ts": "2026-09-17T05:41:06.050536+00:00", "operation": "backtest", "estimated_usd": 0.0001, "actual_usd": 0.0001, "detail": {"detail": {"cpu.core_minute": 0.0001}}}
+{"ts": "2026-09-17T05:41:06.259778+00:00", "operation": "backtest", "estimated_usd": 0.0001, "actual_usd": 0.0001, "detail": {"detail": {"cpu.core_minute": 0.0001}}}
+{"ts": "2026-09-17T05:41:06.469903+00:00", "operation": "backtest", "estimated_usd": 0.0001, "actual_usd": 0.0001, "detail": {"detail": {"cpu.core_minute": 0.0001}}}
+{"ts": "2026-09-17T05:41:10.638424+00:00", "operation": "backtest", "estimated_usd": 0.000341, "actual_usd": 0.000341, "detail": {"detail": {"cpu.core_minute": 0.00034122000000000004}}}
+{"ts": "2026-09-17T05:41:15.109867+00:00", "operation": "backtest", "estimated_usd": 0.000341, "actual_usd": 0.000341, "detail": {"detail": {"cpu.core_minute": 0.00034122000000000004}}}
+{"ts": "2026-09-17T05:41:19.149276+00:00", "operation": "backtest", "estimated_usd": 0.000305, "actual_usd": 0.000305, "detail": {"detail": {"cpu.core_minute": 0.0003054}}}
+{"ts": "2026-09-17T05:41:36.169938+00:00", "operation": "backtest", "estimated_usd": 0.000341, "actual_usd": 0.000341, "detail": {"detail": {"cpu.core_minute": 0.00034122000000000004}}}
+{"ts": "2026-09-17T05:42:43.867841+00:00", "operation": "backtest", "estimated_usd": 2.4e-05, "actual_usd": 2.4e-05, "detail": {"detail": {"cpu.core_minute": 2.4e-05}}}
+{"ts": "2026-09-17T05:42:44.276863+00:00", "operation": "walk_forward", "estimated_usd": 0.00024, "actual_usd": 0.00024, "detail": {"detail": {"cpu.core_minute": 0.00024}}}
+{"ts": "2026-09-17T05:42:45.311442+00:00", "operation": "monte_carlo", "estimated_usd": 1e-05, "actual_usd": 1e-05, "detail": {"detail": {"cpu.core_minute": 1e-05}}}
+{"ts": "2026-09-17T05:42:50.990318+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}
+{"ts": "2026-09-17T05:42:58.874660+00:00", "operation": "backtest", "estimated_usd": 2.4e-05, "actual_usd": 2.4e-05, "detail": {"detail": {"cpu.core_minute": 2.4e-05}}}
+{"ts": "2026-09-17T05:42:59.274572+00:00", "operation": "walk_forward", "estimated_usd": 0.00024, "actual_usd": 0.00024, "detail": {"detail": {"cpu.core_minute": 0.00024}}}
+{"ts": "2026-09-17T05:43:00.503064+00:00", "operation": "monte_carlo", "estimated_usd": 1e-05, "actual_usd": 1e-05, "detail": {"detail": {"cpu.core_minute": 1e-05}}}
+{"ts": "2026-09-17T05:43:02.121559+00:00", "operation": "synthetic", "estimated_usd": 2.4e-05, "actual_usd": 2.4e-05, "detail": {"detail": {"cpu.core_minute": 2.4e-05}}}
+{"ts": "2026-09-17T05:43:07.368352+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}
+{"ts": "2026-09-17T05:43:27.629714+00:00", "operation": "backtest", "estimated_usd": 0.00012, "actual_usd": 0.00012, "detail": {"detail": {"cpu.core_minute": 0.00012}}}
+{"ts": "2026-09-17T05:43:29.600491+00:00", "operation": "walk_forward", "estimated_usd": 0.0012, "actual_usd": 0.0012, "detail": {"detail": {"cpu.core_minute": 0.0012}}}
+{"ts": "2026-09-17T05:43:34.403911+00:00", "operation": "monte_carlo", "estimated_usd": 4e-05, "actual_usd": 4e-05, "detail": {"detail": {"cpu.core_minute": 4e-05}}}
+{"ts": "2026-09-17T05:43:39.723261+00:00", "operation": "synthetic", "estimated_usd": 0.00024, "actual_usd": 0.00024, "detail": {"detail": {"cpu.core_minute": 0.00024}}}
+{"ts": "2026-09-17T05:43:56.454016+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}
+{"ts": "2026-09-17T05:44:06.509092+00:00", "operation": "visual_confirmation", "estimated_usd": 0.015, "actual_usd": 0.015, "detail": {"detail": {"vision.image_downscaled": 0.015}}}
+{"ts": "2026-09-17T05:47:06.109877+00:00", "operation": "operator_session", "estimated_usd": 0.0, "actual_usd": 0.0, "detail": {"detail": {"vision.image_downscaled": 0.0}}}
+{"ts": "2026-09-17T05:47:06.136273+00:00", "operation": "operator_session", "estimated_usd": 0.0, "actual_usd": 0.0, "detail": {"detail": {"vision.image_downscaled": 0.0}}}
+{"ts": "2026-09-17T05:47:12.312934+00:00", "operation": "backtest", "estimated_usd": 0.00012, "actual_usd": 0.00012, "detail": {"detail": {"cpu.core_minute": 0.00012}}}
+{"ts": "2026-09-17T05:47:14.447379+00:00", "operation": "walk_forward", "estimated_usd": 0.0012, "actual_usd": 0.0012, "detail": {"detail": {"cpu.core_minute": 0.0012}}}
+{"ts": "2026-09-17T05:47:19.103150+00:00", "operation": "monte_carlo", "estimated_usd": 2e-05, "actual_usd": 2e-05, "detail": {"detail": {"cpu.core_minute": 2e-05}}}
+{"ts": "2026-09-17T05:47:36.898809+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}
+{"ts": "2026-09-17T05:47:49.874094+00:00", "operation": "backtest", "estimated_usd": 0.0001, "actual_usd": 0.0001, "detail": {"detail": {"cpu.core_minute": 0.0001}}}
+{"ts": "2026-09-17T05:47:51.518405+00:00", "operation": "walk_forward", "estimated_usd": 0.001, "actual_usd": 0.001, "detail": {"detail": {"cpu.core_minute": 0.001}}}
+{"ts": "2026-09-17T05:47:55.450371+00:00", "operation": "monte_carlo", "estimated_usd": 2e-05, "actual_usd": 2e-05, "detail": {"detail": {"cpu.core_minute": 2e-05}}}
+{"ts": "2026-09-17T05:48:11.562712+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}
+{"ts": "2026-09-17T05:48:11.571117+00:00", "operation": "backtest", "estimated_usd": 0.0001, "actual_usd": 0.0001, "detail": {"detail": {"cpu.core_minute": 0.0001}}}
+{"ts": "2026-09-17T05:48:13.277796+00:00", "operation": "walk_forward", "estimated_usd": 0.001, "actual_usd": 0.001, "detail": {"detail": {"cpu.core_minute": 0.001}}}
+{"ts": "2026-09-17T05:48:17.160415+00:00", "operation": "monte_carlo", "estimated_usd": 2e-05, "actual_usd": 2e-05, "detail": {"detail": {"cpu.core_minute": 2e-05}}}
+{"ts": "2026-09-17T05:48:31.974877+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}
+{"ts": "2026-09-17T05:48:31.984071+00:00", "operation": "backtest", "estimated_usd": 0.0001, "actual_usd": 0.0001, "detail": {"detail": {"cpu.core_minute": 0.0001}}}
+{"ts": "2026-09-17T05:48:33.634239+00:00", "operation": "walk_forward", "estimated_usd": 0.001, "actual_usd": 0.001, "detail": {"detail": {"cpu.core_minute": 0.001}}}
+{"ts": "2026-09-17T05:48:37.554746+00:00", "operation": "monte_carlo", "estimated_usd": 2e-05, "actual_usd": 2e-05, "detail": {"detail": {"cpu.core_minute": 2e-05}}}
+{"ts": "2026-09-17T05:48:52.801253+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}
+{"ts": "2026-09-17T05:48:52.812154+00:00", "operation": "backtest", "estimated_usd": 0.0001, "actual_usd": 0.0001, "detail": {"detail": {"cpu.core_minute": 0.0001}}}
+{"ts": "2026-09-17T05:48:54.543660+00:00", "operation": "walk_forward", "estimated_usd": 0.001, "actual_usd": 0.001, "detail": {"detail": {"cpu.core_minute": 0.001}}}
+{"ts": "2026-09-17T05:48:58.495230+00:00", "operation": "monte_carlo", "estimated_usd": 2e-05, "actual_usd": 2e-05, "detail": {"detail": {"cpu.core_minute": 2e-05}}}
+{"ts": "2026-09-17T05:49:13.980466+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}
+{"ts": "2026-09-17T05:49:18.014099+00:00", "operation": "backtest", "estimated_usd": 0.000341, "actual_usd": 0.000341, "detail": {"detail": {"cpu.core_minute": 0.00034122000000000004}}}
+{"ts": "2026-09-17T05:49:23.711982+00:00", "operation": "walk_forward", "estimated_usd": 0.003412, "actual_usd": 0.003412, "detail": {"detail": {"cpu.core_minute": 0.0034121999999999998}}}
+{"ts": "2026-09-17T05:49:36.402504+00:00", "operation": "monte_carlo", "estimated_usd": 1e-05, "actual_usd": 1e-05, "detail": {"detail": {"cpu.core_minute": 1e-05}}}
+{"ts": "2026-09-17T05:50:19.935223+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}
+{"ts": "2026-09-17T05:50:23.928674+00:00", "operation": "backtest", "estimated_usd": 0.000341, "actual_usd": 0.000341, "detail": {"detail": {"cpu.core_minute": 0.00034122000000000004}}}
+{"ts": "2026-09-17T05:50:29.580269+00:00", "operation": "walk_forward", "estimated_usd": 0.003412, "actual_usd": 0.003412, "detail": {"detail": {"cpu.core_minute": 0.0034121999999999998}}}
+{"ts": "2026-09-17T05:50:42.204102+00:00", "operation": "monte_carlo", "estimated_usd": 1e-05, "actual_usd": 1e-05, "detail": {"detail": {"cpu.core_minute": 1e-05}}}
+{"ts": "2026-09-17T05:51:24.299168+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}
+{"ts": "2026-09-17T05:51:27.796107+00:00", "operation": "backtest", "estimated_usd": 0.000305, "actual_usd": 0.000305, "detail": {"detail": {"cpu.core_minute": 0.0003054}}}
+{"ts": "2026-09-17T05:51:33.916964+00:00", "operation": "walk_forward", "estimated_usd": 0.003054, "actual_usd": 0.003054, "detail": {"detail": {"cpu.core_minute": 0.003054}}}
+{"ts": "2026-09-17T05:51:46.684611+00:00", "operation": "monte_carlo", "estimated_usd": 1e-05, "actual_usd": 1e-05, "detail": {"detail": {"cpu.core_minute": 1e-05}}}
+{"ts": "2026-09-17T05:52:35.044919+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}
+{"ts": "2026-09-17T05:52:53.255113+00:00", "operation": "backtest", "estimated_usd": 0.000341, "actual_usd": 0.000341, "detail": {"detail": {"cpu.core_minute": 0.00034122000000000004}}}
+{"ts": "2026-09-17T05:52:59.107175+00:00", "operation": "walk_forward", "estimated_usd": 0.003412, "actual_usd": 0.003412, "detail": {"detail": {"cpu.core_minute": 0.0034121999999999998}}}
+{"ts": "2026-09-17T05:53:12.841790+00:00", "operation": "monte_carlo", "estimated_usd": 8e-05, "actual_usd": 8e-05, "detail": {"detail": {"cpu.core_minute": 8e-05}}}
+{"ts": "2026-09-17T05:53:26.846618+00:00", "operation": "synthetic", "estimated_usd": 0.001024, "actual_usd": 0.001024, "detail": {"detail": {"cpu.core_minute": 0.00102366}}}
+{"ts": "2026-09-17T05:54:16.191927+00:00", "operation": "adversarial", "estimated_usd": 0.018, "actual_usd": 0.018, "detail": {"detail": {"model.input_1k": 0.006, "model.output_1k": 0.012}}}

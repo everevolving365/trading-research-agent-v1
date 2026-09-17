@@ -27,5 +27,5 @@ accounts:
 contract_equivalents: {MNQ: 1, MES: 1, NQ: 10, ES: 10, CL: 10}
 flat_by: {timezone: America/Chicago, time: '15:10'}
 notes:
-  - End-of-day trailing drawdown: the threshold moves on closing balances only, which is
-    materially more forgiving than an intraday-peak trail.
+  - >-
+      End-of-day trailing drawdown: the threshold moves on closing balances only, which is materially more forgiving than an intraday-peak trail.

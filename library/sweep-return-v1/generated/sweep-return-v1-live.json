@@ -1,0 +1,153 @@
+{
+  "alerts": {
+    "long": {
+      "plan_hash": "sha256:006b5f7297036988d61e6ec6ea8ad46aaf3ba30f159a291a11d4a912c57e65df",
+      "price": "{{close}}",
+      "side": "long",
+      "signature": "<hmac-sha256 of the fields above, keyed by the client's webhook secret>",
+      "spec_hash": "sha256:fdafb21392e95fb5fa804fa7c824c6a400df9f452ae7440d789367bd1635e6f3",
+      "spec_id": "sweep-return-v1",
+      "symbol": "{{ticker}}",
+      "time": "{{timenow}}"
+    },
+    "short": {
+      "plan_hash": "sha256:006b5f7297036988d61e6ec6ea8ad46aaf3ba30f159a291a11d4a912c57e65df",
+      "price": "{{close}}",
+      "side": "short",
+      "signature": "<hmac-sha256 of the fields above, keyed by the client's webhook secret>",
+      "spec_hash": "sha256:fdafb21392e95fb5fa804fa7c824c6a400df9f452ae7440d789367bd1635e6f3",
+      "spec_id": "sweep-return-v1",
+      "symbol": "{{ticker}}",
+      "time": "{{timenow}}"
+    }
+  },
+  "autonomy": {
+    "level": 1
+  },
+  "contexts": [
+    {
+      "id": "opening_range",
+      "type": "session_range",
+      "window": {
+        "end": "09:30",
+        "start": "08:30"
+      }
+    }
+  ],
+  "costs": {
+    "commission_per_side": {
+      "unit": "currency",
+      "value": 2.0
+    },
+    "exchange_fees_per_side": {
+      "unit": "currency",
+      "value": 0.0
+    },
+    "slippage": {
+      "unit": "ticks",
+      "value": 1.0
+    },
+    "slippage_model": "volume_volatility",
+    "spread": {
+      "unit": "ticks",
+      "value": 1.0
+    }
+  },
+  "entries": [
+    {
+      "all_of": [
+        {
+          "confirm": "wick",
+          "reference": "opening_range",
+          "side": "high",
+          "type": "range_break"
+        },
+        {
+          "confirm": "close",
+          "reference": "opening_range",
+          "side": "high",
+          "type": "return_inside"
+        }
+      ],
+      "any_of": [],
+      "id": "short",
+      "none_of": [],
+      "side": "short",
+      "timeframe": "5m"
+    },
+    {
+      "all_of": [
+        {
+          "confirm": "wick",
+          "reference": "opening_range",
+          "side": "low",
+          "type": "range_break"
+        },
+        {
+          "confirm": "close",
+          "reference": "opening_range",
+          "side": "low",
+          "type": "return_inside"
+        }
+      ],
+      "any_of": [],
+      "id": "long",
+      "none_of": [],
+      "side": "long",
+      "timeframe": "5m"
+    }
+  ],
+  "execution": {
+    "bar_close_confirmation": true,
+    "entry_order": "market_on_close_of_signal_bar",
+    "gap_behavior": "fill_at_open",
+    "on_overlapping_signal": "ignore_new",
+    "session_close_behavior": "flatten"
+  },
+  "exits": [],
+  "filters": {
+    "blackout_events": [],
+    "days_of_week": [],
+    "max_trades_per_day": 2,
+    "time_windows": [
+      {
+        "end": "15:00",
+        "start": "09:30",
+        "tz": "America/Chicago"
+      }
+    ]
+  },
+  "instruments": [
+    "MNQ",
+    "NQ",
+    "ES",
+    "BTCUSDT"
+  ],
+  "invalidation": [
+    {
+      "reference": "signal_window",
+      "type": "session_end"
+    }
+  ],
+  "plan_hash": "sha256:006b5f7297036988d61e6ec6ea8ad46aaf3ba30f159a291a11d4a912c57e65df",
+  "risk": {
+    "max_concurrent_positions": 1,
+    "scale_in": false,
+    "size": {
+      "method": "fixed_contracts",
+      "value": 1.0
+    },
+    "stop": {
+      "type": "points",
+      "value": 25.0
+    },
+    "target": {
+      "type": "points",
+      "value": 50.0
+    }
+  },
+  "session": "rth",
+  "spec_hash": "sha256:fdafb21392e95fb5fa804fa7c824c6a400df9f452ae7440d789367bd1635e6f3",
+  "spec_id": "sweep-return-v1",
+  "timezone": "America/Chicago"
+}

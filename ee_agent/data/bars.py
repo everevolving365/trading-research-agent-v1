@@ -41,7 +41,13 @@ class Bars:
             raise ValueError(f"Bars for {self.symbol} missing columns: {missing}")
         df = self.df.reset_index(drop=True).copy()
         df["ts"] = pd.to_datetime(df["ts"], utc=True)
-        df = df.sort_values("ts").reset_index(drop=True)
+        # Bars always hands downstream code a sorted series, but it records how
+        # much sorting it had to do: the integrity engine reports that, so a
+        # source delivering out-of-order timestamps is visible rather than
+        # silently tidied away.
+        raw = df["ts"].to_numpy()
+        self.reordered_on_load = int(np.sum(raw[1:] < raw[:-1])) if len(raw) > 1 else 0
+        df = df.sort_values("ts", kind="stable").reset_index(drop=True)
         self.df = df
         self._recompute_calendar()
 
@@ -113,10 +119,11 @@ class Bars:
         arr = np.ascontiguousarray(
             np.column_stack(
                 [
-                    # normalise to nanoseconds first: pandas may store us or ns
+                    # Normalise to UTC nanoseconds: pandas stores us or ns
                     # depending on version, and a pinned artifact must hash the
-                    # same on every machine.
-                    self.df["ts"].astype("datetime64[ns]").astype("int64").to_numpy(),
+                    # same on every machine. tz-aware columns cannot be cast
+                    # directly, hence the explicit convert-then-drop.
+                    _epoch_ns(self.df["ts"]),
                     self.open,
                     self.high,
                     self.low,
@@ -174,6 +181,13 @@ class Bars:
             quality_score=self.quality_score,
             quality_notes=list(self.quality_notes),
         )
+
+
+def _epoch_ns(ts: pd.Series) -> np.ndarray:
+    """UTC nanoseconds since the epoch, whatever resolution pandas chose."""
+    return (
+        ts.dt.tz_convert("UTC").dt.tz_localize(None).to_numpy(dtype="datetime64[ns]").astype("int64")
+    )
 
 
 def _pandas_rule(timeframe: str) -> str:

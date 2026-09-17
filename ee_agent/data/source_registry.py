@@ -133,18 +133,33 @@ def capability_matrix() -> str:
     return "\n".join([header, "-" * len(header), *(c.row() for c in CAPABILITIES.values())])
 
 
+#: Sources that serve recorded or local data. They are the last resort in a live
+#: ladder: a fixture has perfect "reliability" and zero cost, so on those two
+#: measures alone it outranks every real source -- and the agent would quietly
+#: serve stale recorded bars instead of the market. They are only chosen
+#: deliberately (``fixtures_only=True``) or after every live source has failed.
+LAST_RESORT = {"fixture", "csv_ingest"}
+
+
 def ladder(asset_class: str, resolution: str, days_back: int, prefer: list[str] | None = None) -> list[str]:
     """Return the ordered fallback ladder for a request.
 
-    Ordering: client preference first, then by availability, then reliability,
-    then cost. A source that cannot serve the request never appears.
+    Ordering: client preference first, then live sources before recorded ones,
+    then by availability, then reliability, then cost. A source that cannot
+    serve the request never appears.
     """
     candidates = [c for c in CAPABILITIES.values() if c.serves(asset_class, resolution, days_back)]
     prefer = prefer or []
 
     def key(c: SourceCapability):
         pref_rank = prefer.index(c.name) if c.name in prefer else len(prefer)
-        return (pref_rank, 0 if c.available else 1, -c.reliability, c.cost_per_1k_bars_usd)
+        return (
+            pref_rank,
+            1 if c.name in LAST_RESORT else 0,
+            0 if c.available else 1,
+            -c.reliability,
+            c.cost_per_1k_bars_usd,
+        )
 
     return [c.name for c in sorted(candidates, key=key)]
 
