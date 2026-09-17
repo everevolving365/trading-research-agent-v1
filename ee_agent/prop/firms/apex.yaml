@@ -1,0 +1,49 @@
+# Apex Trader Funding -- rule pack. Data, not code.
+firm: apex
+display_name: Apex Trader Funding
+updated: '2026-09-13'
+source: https://apextraderfunding.com  # verify before trusting these numbers with money
+platform: Rithmic/Tradovate
+
+accounts:
+  - id: eval-50k
+    label: 50K Evaluation
+    starting_balance: 50000
+    profit_target: 3000
+    daily_loss_limit: null          # no daily loss limit on the evaluation
+    trailing_max_drawdown: 2500
+    trailing_type: intraday_peak
+    trailing_stops_at_initial_balance: false
+    max_contracts: 10
+    min_trading_days: 7
+    consistency_rule_pct: 30        # 30% rule on funded accounts
+    eval_fee_monthly: 167
+    reset_fee: 80
+    payout_threshold: 2600
+    scaling_plan: false
+    allow_overnight: false
+    allow_news_trading: true
+
+  - id: eval-100k
+    label: 100K Evaluation
+    starting_balance: 100000
+    profit_target: 6000
+    daily_loss_limit: null
+    trailing_max_drawdown: 3000
+    trailing_type: intraday_peak
+    trailing_stops_at_initial_balance: false
+    max_contracts: 14
+    min_trading_days: 7
+    consistency_rule_pct: 30
+    eval_fee_monthly: 207
+    reset_fee: 80
+    payout_threshold: 5200
+    scaling_plan: false
+    allow_overnight: false
+    allow_news_trading: true
+
+contract_equivalents: {MNQ: 1, MES: 1, NQ: 10, ES: 10, CL: 10}
+flat_by: {timezone: America/New_York, time: '16:59'}
+notes:
+  - The trailing drawdown does NOT stop at the initial balance on evaluations; it keeps
+    trailing until the account is funded.

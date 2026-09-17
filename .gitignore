@@ -5,9 +5,15 @@ __pycache__/
 .venv/
 venv/
 env/
-data/
-backtests/
+.pytest_cache/
+.ruff_cache/
+data/cache/
+runs/
+artifacts/
+secrets.enc
+*.key
 results/
+backtests/
 .DS_Store
 Thumbs.db
 .idea/

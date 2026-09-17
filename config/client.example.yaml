@@ -1,0 +1,64 @@
+# EverEvolving Trading Agent -- client configuration template
+# Copy to config/client.yaml.  Everything here has a working default; an empty
+# file is a valid configuration.
+
+client:
+  name: ""
+  timezone: America/Chicago
+
+voice:
+  # Voice is a SHELL, never a dependency. enabled: false loses no capability.
+  enabled: false
+  input:
+    engine: whisper_local      # whisper_local | none
+    model: base.en             # tiny.en | base.en | small.en | medium.en
+    push_to_talk: true
+  output:
+    engine: system_tts         # system_tts | none
+    voice: default
+    rate: 180
+  interruptible: true
+
+model:
+  provider: anthropic          # anthropic | gemini | openai | none
+  # `none` runs the zero-cost floor: compilers, engine, parity and ingestion all
+  # work with no model at all. Only conversation and the adversarial pass need one.
+  name: claude-opus-5
+  secret: ANTHROPIC_API_KEY
+
+data:
+  # The resolver walks this ladder top-down and falls to the next source on
+  # failure. See ee_agent/data/source_registry.py for the capability matrix.
+  preference: [databento, polygon, binance, yfinance, csv_ingest]
+  cache_dir: data/cache
+  max_cache_age_hours: 24     # older than this is LOUDLY reported, never silent
+  fixtures_only: false        # true forces every fetch to the committed fixtures
+
+cost:
+  # The cost layer informs. It never blocks. (Hard rule 9.)
+  notify_threshold_usd: 0.10  # below this, log it but do not interrupt
+  ceiling_usd: null           # null = no ceiling. If set and reached: it ASKS.
+
+execution:
+  autonomy_level: 1           # 1 watch | 2 propose | 3 paper-parallel | 4 capped live | 5 unattended
+  broker: mock                # mock | topstepx | owner_robot
+  kill_switch:
+    daily_loss_usd: 1000
+    consecutive_losses: 4
+    max_drift_sigma: 3.0
+    max_latency_ms: 2000
+    max_data_staleness_s: 90
+  caps:                       # apply at autonomy level 4
+    max_contracts: 1
+    max_trades_per_day: 6
+    max_daily_loss_usd: 500
+
+operator:
+  # The Operator drives a real browser. It READS AND CONFIGURES ONLY.
+  # Order placement code paths are physically absent from the module. (Hard rule 4.)
+  browser: chromium
+  headless: false
+  screenshot_dir: runs/operator
+  screenshot_retention_days: 30
+  downscale_screenshots_to_width: 1280
+  credential_mode: keychain   # keychain | attach_to_profile

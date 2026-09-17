@@ -1,0 +1,8 @@
+{
+  "source": "polygon",
+  "symbol": "SPY",
+  "timeframe": "5m",
+  "recorded_at": "2026-09-17T00:03:52.610790+00:00",
+  "n_bars": 19512,
+  "content_hash": "sha256:c84582fea16ddbb0504a7314a1225d145f78334d69fd9db152079122128b8bc7"
+}

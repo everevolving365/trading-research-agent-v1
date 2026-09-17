@@ -1,0 +1,31 @@
+# TakeProfit Trader -- rule pack. Data, not code.
+firm: takeprofit
+display_name: TakeProfit Trader
+updated: '2026-09-13'
+source: https://takeprofittrader.com  # verify before trusting these numbers with money
+platform: Rithmic
+
+accounts:
+  - id: eval-50k
+    label: 50K Evaluation
+    starting_balance: 50000
+    profit_target: 2000
+    daily_loss_limit: 1100
+    trailing_max_drawdown: 2000
+    trailing_type: end_of_day
+    trailing_stops_at_initial_balance: true
+    max_contracts: 5
+    min_trading_days: 5
+    consistency_rule_pct: 50
+    eval_fee_monthly: 150
+    reset_fee: 50
+    payout_threshold: 2500
+    scaling_plan: false
+    allow_overnight: false
+    allow_news_trading: true
+
+contract_equivalents: {MNQ: 1, MES: 1, NQ: 10, ES: 10, CL: 10}
+flat_by: {timezone: America/Chicago, time: '15:10'}
+notes:
+  - End-of-day trailing drawdown: the threshold moves on closing balances only, which is
+    materially more forgiving than an intraday-peak trail.

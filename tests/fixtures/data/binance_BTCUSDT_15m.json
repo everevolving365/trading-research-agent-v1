@@ -1,0 +1,8 @@
+{
+  "source": "binance",
+  "symbol": "BTCUSDT",
+  "timeframe": "15m",
+  "recorded_at": "2026-09-17T00:03:36.070649+00:00",
+  "n_bars": 35040,
+  "content_hash": "sha256:ff3ea03ab819d2bfae2029f81bd16b6a115d495bc73071726c9c145f2fe23e30"
+}

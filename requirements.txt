@@ -1,10 +1,23 @@
-google-generativeai>=0.7.0
-polygon-api-client>=1.13.0
-databento>=0.35.0
-yfinance>=0.2.40
-pandas>=2.1.0
+# --- core (required) ---
+pyyaml>=6.0
 numpy>=1.26.0
-matplotlib>=3.8.0
-python-dotenv>=1.0.0
+pandas>=2.1.0
+
+# --- optional: nothing below is needed to run the zero-cost floor ---
+# data + http
 requests>=2.31.0
-pygments>=2.17.0
+# secrets: OS keychain (encrypted-file fallback is used when absent)
+keyring>=24.0.0
+cryptography>=42.0.0
+# charts / tearsheets
+matplotlib>=3.8.0
+# voice shell (local, free) -- see docs/VOICE.md
+# faster-whisper>=1.0.0
+# pyttsx3>=2.90
+# sounddevice>=0.4.6
+# computer use / operator
+# playwright>=1.44.0
+# data providers
+# yfinance>=0.2.40
+# polygon-api-client>=1.13.0
+# databento>=0.35.0

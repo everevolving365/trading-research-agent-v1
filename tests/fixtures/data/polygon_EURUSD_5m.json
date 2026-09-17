@@ -1,0 +1,8 @@
+{
+  "source": "polygon",
+  "symbol": "EURUSD",
+  "timeframe": "5m",
+  "recorded_at": "2026-09-17T00:03:56.603303+00:00",
+  "n_bars": 27216,
+  "content_hash": "sha256:9be7176c6fbe2989c0bfecd4c34e4ec625707f58ce13fd35e07c066af81b3fa7"
+}

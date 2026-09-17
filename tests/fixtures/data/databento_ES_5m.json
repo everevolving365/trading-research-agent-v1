@@ -1,0 +1,8 @@
+{
+  "source": "databento",
+  "symbol": "ES",
+  "timeframe": "5m",
+  "recorded_at": "2026-09-17T00:03:49.657451+00:00",
+  "n_bars": 21807,
+  "content_hash": "sha256:c9cf058da773cf2b7878e142789dc2070f2d30f6a836c1dc29b9cc42f4b70f90"
+}

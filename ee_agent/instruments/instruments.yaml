@@ -1,0 +1,253 @@
+# The instrument registry. ALL asset behaviour lives here.
+#
+# Hard rule 5: no per-asset special cases anywhere in the codebase. If code
+# anywhere branches on asset class to get a number, that number belongs in this
+# file instead. A new instrument is a new entry here and nothing else.
+#
+# tick_value is in `currency` per one tick per one unit of size.
+# sessions are local to `timezone`; `rth` is the regular session, `eth` the full one.
+
+defaults:
+  future:
+    session: rth
+    rollover: volume_crossover
+    holiday_calendar: cme
+  crypto:
+    session: 24h
+    timezone: UTC
+    holiday_calendar: none
+  equity:
+    session: rth
+    timezone: America/New_York
+    holiday_calendar: nyse
+  forex:
+    session: 24h
+    timezone: America/New_York
+    holiday_calendar: fx
+
+instruments:
+  MNQ:
+    name: Micro E-mini Nasdaq-100
+    asset_class: future
+    exchange: CME
+    root: MNQ
+    currency: USD
+    tick_size: 0.25
+    tick_value: 0.50
+    multiplier: 2.0
+    timezone: America/Chicago
+    sessions:
+      rth: {start: "08:30", end: "15:00"}
+      eth: {start: "17:00", end: "16:00"}
+    fees_per_side: 0.37       # exchange + clearing, typical prop pass-through
+    margin_day: 100
+    margin_overnight: 2200
+    expiry: quarterly
+    rollover_days_before: 8
+    typical_daily_volume: 900000
+    typical_daily_range_ticks: 800
+    correlation_group: nasdaq
+    prop_eligible: true
+
+  NQ:
+    name: E-mini Nasdaq-100
+    asset_class: future
+    exchange: CME
+    root: NQ
+    currency: USD
+    tick_size: 0.25
+    tick_value: 5.00
+    multiplier: 20.0
+    timezone: America/Chicago
+    sessions:
+      rth: {start: "08:30", end: "15:00"}
+      eth: {start: "17:00", end: "16:00"}
+    fees_per_side: 1.24
+    margin_day: 1000
+    margin_overnight: 22000
+    expiry: quarterly
+    rollover_days_before: 8
+    typical_daily_volume: 500000
+    typical_daily_range_ticks: 800
+    correlation_group: nasdaq
+    prop_eligible: true
+
+  ES:
+    name: E-mini S&P 500
+    asset_class: future
+    exchange: CME
+    root: ES
+    currency: USD
+    tick_size: 0.25
+    tick_value: 12.50
+    multiplier: 50.0
+    timezone: America/Chicago
+    sessions:
+      rth: {start: "08:30", end: "15:00"}
+      eth: {start: "17:00", end: "16:00"}
+    fees_per_side: 1.24
+    margin_day: 500
+    margin_overnight: 13200
+    expiry: quarterly
+    rollover_days_before: 8
+    typical_daily_volume: 1400000
+    typical_daily_range_ticks: 200
+    correlation_group: sp500
+    prop_eligible: true
+
+  MES:
+    name: Micro E-mini S&P 500
+    asset_class: future
+    exchange: CME
+    root: MES
+    currency: USD
+    tick_size: 0.25
+    tick_value: 1.25
+    multiplier: 5.0
+    timezone: America/Chicago
+    sessions:
+      rth: {start: "08:30", end: "15:00"}
+      eth: {start: "17:00", end: "16:00"}
+    fees_per_side: 0.37
+    margin_day: 50
+    margin_overnight: 1320
+    expiry: quarterly
+    rollover_days_before: 8
+    typical_daily_volume: 1200000
+    typical_daily_range_ticks: 200
+    correlation_group: sp500
+    prop_eligible: true
+
+  CL:
+    name: Crude Oil
+    asset_class: future
+    exchange: NYMEX
+    root: CL
+    currency: USD
+    tick_size: 0.01
+    tick_value: 10.00
+    multiplier: 1000.0
+    timezone: America/Chicago
+    sessions:
+      rth: {start: "08:00", end: "13:30"}
+      eth: {start: "17:00", end: "16:00"}
+    fees_per_side: 1.50
+    margin_day: 1000
+    margin_overnight: 6000
+    expiry: monthly
+    rollover_days_before: 5
+    typical_daily_volume: 400000
+    typical_daily_range_ticks: 200
+    correlation_group: energy
+    prop_eligible: true
+
+  BTCUSDT:
+    name: Bitcoin / Tether (spot)
+    asset_class: crypto
+    exchange: BINANCE
+    currency: USDT
+    tick_size: 0.01
+    tick_value: 0.01          # one unit of size = 1 BTC
+    multiplier: 1.0
+    timezone: UTC
+    sessions:
+      rth: {start: "00:00", end: "23:59"}
+      eth: {start: "00:00", end: "23:59"}
+    fees_per_side: 0.0        # taker fee is percentage-based, see fee_bps
+    fee_bps: 10.0
+    margin_day: null
+    margin_overnight: null
+    typical_daily_volume: 40000
+    typical_daily_range_ticks: 250000
+    correlation_group: crypto_major
+    prop_eligible: false
+
+  ETHUSDT:
+    name: Ether / Tether (spot)
+    asset_class: crypto
+    exchange: BINANCE
+    currency: USDT
+    tick_size: 0.01
+    tick_value: 0.01
+    multiplier: 1.0
+    timezone: UTC
+    sessions:
+      rth: {start: "00:00", end: "23:59"}
+      eth: {start: "00:00", end: "23:59"}
+    fees_per_side: 0.0
+    fee_bps: 10.0
+    typical_daily_volume: 300000
+    typical_daily_range_ticks: 15000
+    correlation_group: crypto_major
+    prop_eligible: false
+
+  SPY:
+    name: SPDR S&P 500 ETF
+    asset_class: equity
+    exchange: ARCA
+    currency: USD
+    tick_size: 0.01
+    tick_value: 0.01          # one unit of size = 1 share
+    multiplier: 1.0
+    timezone: America/New_York
+    sessions:
+      rth: {start: "09:30", end: "16:00"}
+      eth: {start: "04:00", end: "20:00"}
+    fees_per_side: 0.0
+    fee_bps: 0.0
+    commission_per_share: 0.005
+    typical_daily_volume: 75000000
+    typical_daily_range_ticks: 400
+    correlation_group: sp500
+    prop_eligible: false
+
+  QQQ:
+    name: Invesco QQQ Trust
+    asset_class: equity
+    exchange: NASDAQ
+    currency: USD
+    tick_size: 0.01
+    tick_value: 0.01
+    multiplier: 1.0
+    timezone: America/New_York
+    sessions:
+      rth: {start: "09:30", end: "16:00"}
+      eth: {start: "04:00", end: "20:00"}
+    fees_per_side: 0.0
+    commission_per_share: 0.005
+    typical_daily_volume: 45000000
+    typical_daily_range_ticks: 350
+    correlation_group: nasdaq
+    prop_eligible: false
+
+  EURUSD:
+    name: Euro / US Dollar
+    asset_class: forex
+    exchange: FX
+    currency: USD
+    tick_size: 0.00001
+    tick_value: 1.00          # per 1 standard lot (100k)
+    multiplier: 100000.0
+    timezone: America/New_York
+    sessions:
+      rth: {start: "02:00", end: "11:00"}
+      eth: {start: "17:00", end: "17:00"}
+    fees_per_side: 0.0
+    spread_ticks_typical: 8
+    typical_daily_volume: 0
+    typical_daily_range_ticks: 700
+    correlation_group: fx_eur
+    prop_eligible: true
+
+# Correlation groups drive the hedge refusal (hard rule 3). Two instruments in
+# correlated groups with opposing exposure is a hedge even when the symbols
+# differ -- long NQ on one account and short ES on another IS a hedge.
+correlation_matrix:
+  nasdaq:   {sp500: 0.92, nasdaq: 1.0, crypto_major: 0.45, energy: 0.10, fx_eur: -0.05}
+  sp500:    {nasdaq: 0.92, sp500: 1.0, crypto_major: 0.42, energy: 0.15, fx_eur: -0.05}
+  crypto_major: {nasdaq: 0.45, sp500: 0.42, crypto_major: 1.0, energy: 0.05, fx_eur: 0.10}
+  energy:   {nasdaq: 0.10, sp500: 0.15, crypto_major: 0.05, energy: 1.0, fx_eur: 0.05}
+  fx_eur:   {nasdaq: -0.05, sp500: -0.05, crypto_major: 0.10, energy: 0.05, fx_eur: 1.0}
+
+# Above this absolute correlation, opposing exposure across accounts is refused.
+hedge_correlation_threshold: 0.60

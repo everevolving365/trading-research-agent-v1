@@ -1,0 +1,84 @@
+# Topstep -- rule pack. One data file per firm (ability 42).
+#
+# These are rules, not code. A firm changing its rules is a change to this file.
+# Every number here is used by the combine simulator to answer: what percentage
+# of simulated runs pass, in how many days, and what percentage blow it.
+firm: topstep
+display_name: Topstep
+updated: '2026-09-13'
+source: https://help.topstep.com  # verify before trusting these numbers with money
+platform: TopstepX
+
+accounts:
+  - id: combine-50k
+    label: 50K Combine
+    starting_balance: 50000
+    profit_target: 3000
+    daily_loss_limit: 1000          # realised + unrealised, measured intraday
+    trailing_max_drawdown: 2000     # trails the account's peak equity
+    trailing_type: intraday_peak    # intraday_peak | end_of_day
+    trailing_stops_at_initial_balance: true
+    max_contracts: 5                # in MNQ-equivalent micros; see contract_equivalents
+    min_trading_days: 2
+    consistency_rule_pct: 50        # no single day may exceed this % of total profit
+    eval_fee_monthly: 49
+    reset_fee: 49
+    payout_threshold: 5000
+    scaling_plan: false
+    allow_overnight: false
+    allow_news_trading: true
+
+  - id: combine-100k
+    label: 100K Combine
+    starting_balance: 100000
+    profit_target: 6000
+    daily_loss_limit: 2000
+    trailing_max_drawdown: 3000
+    trailing_type: intraday_peak
+    trailing_stops_at_initial_balance: true
+    max_contracts: 10
+    min_trading_days: 2
+    consistency_rule_pct: 50
+    eval_fee_monthly: 99
+    reset_fee: 99
+    payout_threshold: 10000
+    scaling_plan: false
+    allow_overnight: false
+    allow_news_trading: true
+
+  - id: combine-150k
+    label: 150K Combine
+    starting_balance: 150000
+    profit_target: 9000
+    daily_loss_limit: 3000
+    trailing_max_drawdown: 4500
+    trailing_type: intraday_peak
+    trailing_stops_at_initial_balance: true
+    max_contracts: 15
+    min_trading_days: 2
+    consistency_rule_pct: 50
+    eval_fee_monthly: 149
+    reset_fee: 149
+    payout_threshold: 15000
+    scaling_plan: false
+    allow_overnight: false
+    allow_news_trading: true
+
+# Contract equivalents for the position limit: a limit of 5 means 5 micros,
+# and one E-mini counts as ten micros.
+contract_equivalents:
+  MNQ: 1
+  MES: 1
+  NQ: 10
+  ES: 10
+  CL: 10
+
+flat_by:
+  timezone: America/Chicago
+  time: '15:10'    # positions must be flat before the close each session
+
+notes:
+  - The trailing drawdown follows the account's PEAK equity intraday, not the closing balance.
+    A trade that goes 800 in profit and comes back raises the threshold and does not lower it.
+  - Cross-account hedging is prohibited. The owner has been formally warned for exactly this.
+    The global position ledger refuses such orders before they reach any API (hard rule 3).
