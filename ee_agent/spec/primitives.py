@@ -31,16 +31,60 @@ from ee_agent.errors import PrimitiveError
 class Runtime:
     """Everything a compiled node can see. Carries no future information."""
 
-    def __init__(self, bars, instrument=None, spec=None):
+    def __init__(self, bars, instrument=None, spec=None, strategy_tz: str | None = None):
         self.bars = bars
         self.instrument = instrument
         self.spec = spec
+        #: The live path rebuilds the plan from JSON and has no spec object, so
+        #: it passes the timezone explicitly. Without this it would silently
+        #: fall back to the exchange timezone and diverge from the other three
+        #: targets on any instrument whose exchange is not in the strategy's tz.
+        self._strategy_tz = strategy_tz
         self.contexts: dict[str, dict[str, np.ndarray]] = {}
         self.scratch: dict[str, Any] = {}
+        self._calendars: dict[str, tuple[np.ndarray, np.ndarray]] = {}
 
     @property
     def n(self) -> int:
         return len(self.bars)
+
+    def calendar(self, tz: str | None) -> tuple[np.ndarray, np.ndarray]:
+        """(minute_of_day, local_date) in the STRATEGY's timezone.
+
+        A window of "09:30 to 15:00 Central" means Central, whichever instrument
+        it is evaluated on. Reading the bars' own local time instead is correct
+        for MNQ (Chicago) and wrong for SPY (New York) -- exactly the kind of
+        per-asset drift hard rule 5 exists to prevent, and it showed up as a
+        Pine/Python parity divergence on SPY before this existed.
+
+        Use :meth:`session_days` for anything that RESETS daily. Clock
+        comparisons follow the strategy's timezone; day boundaries follow the
+        exchange's, because that is what Pine's ``time("D")`` does and a daily
+        reset that disagreed with it would diverge every session.
+        """
+        tz = tz or self.strategy_tz
+        if tz not in self._calendars:
+            if tz == self.bars.tz:
+                self._calendars[tz] = (self.bars.minute_of_day, self.bars.local_date)
+            else:
+                local = self.bars.df["ts"].dt.tz_convert(tz)
+                self._calendars[tz] = (
+                    (local.dt.hour * 60 + local.dt.minute).to_numpy(dtype=np.int32),
+                    local.dt.strftime("%Y-%m-%d").to_numpy(),
+                )
+        return self._calendars[tz]
+
+    def session_days(self) -> np.ndarray:
+        """Exchange-local trading dates -- the unit a daily reset counts in."""
+        return self.bars.local_date
+
+    @property
+    def strategy_tz(self) -> str:
+        if self._strategy_tz:
+            return self._strategy_tz
+        if self.spec is not None and getattr(self.spec, "universe", None) is not None:
+            return self.spec.universe.timezone or self.bars.tz
+        return self.bars.tz
 
 
 class Node:
@@ -218,6 +262,8 @@ class SessionRangeNode(ContextNode):
         window = self.params.get("window", {}) or {}
         start = _tw_minutes(str(window.get("start", "08:30")))
         end = _tw_minutes(str(window.get("end", "09:30")))
+        minute_of_day, _tz_date = rt.calendar(self.params.get("tz"))
+        local_date = rt.session_days()
         n = len(bars)
         rhigh = np.full(n, np.nan)
         rlow = np.full(n, np.nan)
@@ -228,10 +274,10 @@ class SessionRangeNode(ContextNode):
         acc_hi = np.nan
         acc_lo = np.nan
         for i in range(n):
-            day = bars.local_date[i]
+            day = local_date[i]
             if day != cur_day:
                 cur_day, acc_hi, acc_lo = day, np.nan, np.nan
-            mod = bars.minute_of_day[i]
+            mod = minute_of_day[i]
             inside = start <= mod < end
             if inside:
                 acc_hi = bars.high[i] if np.isnan(acc_hi) else max(acc_hi, bars.high[i])
@@ -311,12 +357,13 @@ class RangeBreakNode(Node):
         side = self.params.get("side", "high")
         confirm = self.params.get("confirm", "wick")
         require_complete = bool(self.params.get("require_complete", True))
+        local_date = rt.session_days()
         n = len(bars)
         armed = np.zeros(n, dtype=bool)
         cur_day = None
         flag = False
         for i in range(n):
-            day = bars.local_date[i]
+            day = local_date[i]
             if day != cur_day:
                 cur_day, flag = day, False
             level_hi, level_lo = ctx["high"][i], ctx["low"][i]
@@ -469,7 +516,7 @@ class TimeWindowNode(Node):
     def prepare(self, rt: Runtime) -> None:
         start = _tw_minutes(str(self.params.get("start", "00:00")))
         end = _tw_minutes(str(self.params.get("end", "23:59")))
-        mod = rt.bars.minute_of_day
+        mod, _local_date = rt.calendar(self.params.get("tz"))
         self.series = (mod >= start) & (mod < end) if start <= end else ((mod >= start) | (mod < end))
 
 
@@ -514,7 +561,8 @@ class SessionEndNode(Node):
         end = _tw_minutes(str(end_hhmm or "23:59"))
         offset = int(self.params.get("offset_minutes", 0))
         cutoff = end - offset
-        mod = bars.minute_of_day
+        mod, _tz_date = rt.calendar(self.params.get("tz"))
+        local_date = rt.session_days()
         n = len(bars)
         series = np.zeros(n, dtype=bool)
         from ee_agent.data.bars import timeframe_minutes
@@ -523,7 +571,7 @@ class SessionEndNode(Node):
         series = (mod + step >= cutoff) & (mod < cutoff)
         # also flag the true last bar of each local day, whatever the clock says
         for i in range(n - 1):
-            if bars.local_date[i] != bars.local_date[i + 1]:
+            if local_date[i] != local_date[i + 1]:
                 series[i] = True
         # Deliberately NOT flagging the final element of the array. "The data ran
         # out" is not a session end -- treating it as one makes the signal depend

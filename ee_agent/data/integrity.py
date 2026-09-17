@@ -124,7 +124,11 @@ def check_and_clean(
     # ---- gaps -------------------------------------------------------------
     step = _expected_step_minutes(cleaned)
     if len(cleaned) > 1 and step > 0:
-        deltas = np.diff(cleaned.df["ts"].astype("int64").to_numpy()) / 60e9  # minutes
+        # NOTE: never convert timestamps by dividing a raw int64 view. pandas
+        # stores datetime64 at whatever resolution it chose (ns, us, ...), so
+        # that silently scales every gap by 1000x on some versions and finds
+        # nothing. total_seconds() is resolution-independent.
+        deltas = cleaned.df["ts"].diff().dt.total_seconds().to_numpy()[1:] / 60.0  # minutes
         threshold = step * max_gap_multiple
         for i in np.flatnonzero(deltas > threshold):
             a = cleaned.df["ts"].iloc[i]

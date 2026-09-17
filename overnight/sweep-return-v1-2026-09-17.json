@@ -1,0 +1,62 @@
+{
+  "started": "2026-09-17T05:19:27.151692+00:00",
+  "finished": "2026-09-17T05:20:51.101917+00:00",
+  "spec_id": "sweep-return-v1",
+  "symbol": "MNQ",
+  "n_variants": 4,
+  "n_survivors": 0,
+  "survivors": [],
+  "rejected": [
+    {
+      "description": "original (unchanged)",
+      "spec_id": "sweep-return-v1",
+      "net_pnl": -1253.48,
+      "oos_net_pnl": -1035.7,
+      "sharpe": -7.023357689656373,
+      "n_trades": 102,
+      "survived": false,
+      "verdict": "2 serious findings. This does not survive the adversarial pass.",
+      "synthetic_percentile": null,
+      "combine_pass_rate": 0.0
+    },
+    {
+      "description": "stop x0.75, target x0.75",
+      "spec_id": "sweep-return-v1-v1",
+      "net_pnl": -1948.4800000000002,
+      "oos_net_pnl": -1563.7000000000003,
+      "sharpe": -14.552284481889997,
+      "n_trades": 102,
+      "survived": false,
+      "verdict": "3 serious findings. This does not survive the adversarial pass.",
+      "synthetic_percentile": null,
+      "combine_pass_rate": 0.0
+    },
+    {
+      "description": "stop x0.75, target x0.75, start +30m",
+      "spec_id": "sweep-return-v1-v2",
+      "net_pnl": -1210.5400000000002,
+      "oos_net_pnl": -1008.5200000000002,
+      "sharpe": -10.072013270691786,
+      "n_trades": 96,
+      "survived": false,
+      "verdict": "3 serious findings. This does not survive the adversarial pass.",
+      "synthetic_percentile": null,
+      "combine_pass_rate": 0.0
+    },
+    {
+      "description": "stop x0.75",
+      "spec_id": "sweep-return-v1-v3",
+      "net_pnl": -1870.4800000000002,
+      "oos_net_pnl": -1303.7000000000003,
+      "sharpe": -12.330176883496538,
+      "n_trades": 102,
+      "survived": false,
+      "verdict": "2 serious findings. This does not survive the adversarial pass.",
+      "synthetic_percentile": null,
+      "combine_pass_rate": 0.0
+    }
+  ],
+  "cost_usd": 0.0765,
+  "corrected_sharpe": -7.8627,
+  "notes": []
+}

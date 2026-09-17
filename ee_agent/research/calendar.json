@@ -1,0 +1,597 @@
+{
+ "updated": "2026-09-13",
+ "coverage_note": "Scheduled, publicly announced events only. CPI and PCE dates are approximate -- the agencies publish exact dates and this file should be refreshed from them. Unscheduled news (a bank failing, a geopolitical shock, an unscheduled Fed statement) is NOT in here and cannot be. A quiet-day tag means 'no scheduled event', never 'nothing happened'.",
+ "events": [
+  {
+   "date": "2025-07-04",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2025-07-09",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2025-08-01",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2025-08-13",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2025-09-05",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2025-09-10",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2025-09-17",
+   "time_local": "13:00",
+   "tz": "America/New_York",
+   "name": "FOMC rate decision",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 30,
+   "blackout_after_min": 60,
+   "note": "the press conference at 14:30 often moves more than the decision"
+  },
+  {
+   "date": "2025-09-17",
+   "time_local": "14:30",
+   "tz": "America/New_York",
+   "name": "FOMC press conference",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 10,
+   "blackout_after_min": 45
+  },
+  {
+   "date": "2025-10-03",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2025-10-08",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2025-10-29",
+   "time_local": "13:00",
+   "tz": "America/New_York",
+   "name": "FOMC rate decision",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 30,
+   "blackout_after_min": 60,
+   "note": "the press conference at 14:30 often moves more than the decision"
+  },
+  {
+   "date": "2025-10-29",
+   "time_local": "14:30",
+   "tz": "America/New_York",
+   "name": "FOMC press conference",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 10,
+   "blackout_after_min": 45
+  },
+  {
+   "date": "2025-11-07",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2025-11-12",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2025-12-05",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2025-12-10",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2025-12-10",
+   "time_local": "13:00",
+   "tz": "America/New_York",
+   "name": "FOMC rate decision",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 30,
+   "blackout_after_min": 60,
+   "note": "the press conference at 14:30 often moves more than the decision"
+  },
+  {
+   "date": "2025-12-10",
+   "time_local": "14:30",
+   "tz": "America/New_York",
+   "name": "FOMC press conference",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 10,
+   "blackout_after_min": 45
+  },
+  {
+   "date": "2026-01-02",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-01-14",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-01-28",
+   "time_local": "13:00",
+   "tz": "America/New_York",
+   "name": "FOMC rate decision",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 30,
+   "blackout_after_min": 60,
+   "note": "the press conference at 14:30 often moves more than the decision"
+  },
+  {
+   "date": "2026-01-28",
+   "time_local": "14:30",
+   "tz": "America/New_York",
+   "name": "FOMC press conference",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 10,
+   "blackout_after_min": 45
+  },
+  {
+   "date": "2026-02-06",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-02-11",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-03-06",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-03-11",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-03-18",
+   "time_local": "13:00",
+   "tz": "America/New_York",
+   "name": "FOMC rate decision",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 30,
+   "blackout_after_min": 60,
+   "note": "the press conference at 14:30 often moves more than the decision"
+  },
+  {
+   "date": "2026-03-18",
+   "time_local": "14:30",
+   "tz": "America/New_York",
+   "name": "FOMC press conference",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 10,
+   "blackout_after_min": 45
+  },
+  {
+   "date": "2026-04-03",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-04-08",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-04-29",
+   "time_local": "13:00",
+   "tz": "America/New_York",
+   "name": "FOMC rate decision",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 30,
+   "blackout_after_min": 60,
+   "note": "the press conference at 14:30 often moves more than the decision"
+  },
+  {
+   "date": "2026-04-29",
+   "time_local": "14:30",
+   "tz": "America/New_York",
+   "name": "FOMC press conference",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 10,
+   "blackout_after_min": 45
+  },
+  {
+   "date": "2026-05-01",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-05-13",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-06-05",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-06-10",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-06-17",
+   "time_local": "13:00",
+   "tz": "America/New_York",
+   "name": "FOMC rate decision",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 30,
+   "blackout_after_min": 60,
+   "note": "the press conference at 14:30 often moves more than the decision"
+  },
+  {
+   "date": "2026-06-17",
+   "time_local": "14:30",
+   "tz": "America/New_York",
+   "name": "FOMC press conference",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 10,
+   "blackout_after_min": 45
+  },
+  {
+   "date": "2026-07-03",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-07-08",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-07-29",
+   "time_local": "13:00",
+   "tz": "America/New_York",
+   "name": "FOMC rate decision",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 30,
+   "blackout_after_min": 60,
+   "note": "the press conference at 14:30 often moves more than the decision"
+  },
+  {
+   "date": "2026-07-29",
+   "time_local": "14:30",
+   "tz": "America/New_York",
+   "name": "FOMC press conference",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 10,
+   "blackout_after_min": 45
+  },
+  {
+   "date": "2026-08-07",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-08-12",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-09-04",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-09-09",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-09-16",
+   "time_local": "13:00",
+   "tz": "America/New_York",
+   "name": "FOMC rate decision",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 30,
+   "blackout_after_min": 60,
+   "note": "the press conference at 14:30 often moves more than the decision"
+  },
+  {
+   "date": "2026-09-16",
+   "time_local": "14:30",
+   "tz": "America/New_York",
+   "name": "FOMC press conference",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 10,
+   "blackout_after_min": 45
+  },
+  {
+   "date": "2026-10-02",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-10-14",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-11-04",
+   "time_local": "13:00",
+   "tz": "America/New_York",
+   "name": "FOMC rate decision",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 30,
+   "blackout_after_min": 60,
+   "note": "the press conference at 14:30 often moves more than the decision"
+  },
+  {
+   "date": "2026-11-04",
+   "time_local": "14:30",
+   "tz": "America/New_York",
+   "name": "FOMC press conference",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 10,
+   "blackout_after_min": 45
+  },
+  {
+   "date": "2026-11-06",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-11-11",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-12-04",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "Non-farm payrolls",
+   "kind": "nfp",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-12-09",
+   "time_local": "08:30",
+   "tz": "America/New_York",
+   "name": "CPI (approximate: BLS publishes the exact date)",
+   "kind": "cpi",
+   "impact": "high",
+   "blackout_before_min": 15,
+   "blackout_after_min": 30
+  },
+  {
+   "date": "2026-12-16",
+   "time_local": "13:00",
+   "tz": "America/New_York",
+   "name": "FOMC rate decision",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 30,
+   "blackout_after_min": 60,
+   "note": "the press conference at 14:30 often moves more than the decision"
+  },
+  {
+   "date": "2026-12-16",
+   "time_local": "14:30",
+   "tz": "America/New_York",
+   "name": "FOMC press conference",
+   "kind": "fomc",
+   "impact": "high",
+   "blackout_before_min": 10,
+   "blackout_after_min": 45
+  }
+ ]
+}

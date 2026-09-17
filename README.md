@@ -1,118 +1,212 @@
-# EverEvolving Researche Trading Agent
+# EverEvolving Trading Agent
 
-A command-line AI research agent. You type an asset (any class), it pulls 1-minute OHLCV data, you describe a strategy in plain English, Gemini turns it into a Python backtest, you run it, and you get clean metrics + a P&L equity curve.
+A voice-native, deeply autonomous trading agent that is also a computer-using
+agent. You describe your strategy and your risk rules out loud. It researches,
+fetches data for any asset from anywhere, backtests in Python, builds the
+TradingView indicator, logs into your TradingView account and runs the deep
+backtest itself, and trades the strategy live on prop firms.
 
-## Prerequisites
+**You own the strategy. You own the risk.** The agent does not invent
+strategies, does not set risk, and does not tell anyone what to trade.
 
-- Python 3.11 or newer
-- API keys (only the ones you need — see below)
+## The guarantee that defines the product
 
-## Installation
-
-```
-git clone <or copy this folder>
-cd everevolving-trading-agent
-pip install -r requirements.txt
-cp .env.example .env
-# edit .env and add your keys
-python main.py
-```
-
-## API keys
-
-| Key | Required for | Where to get it |
-|---|---|---|
-| `GEMINI_API_KEY` | Strategy generation + asset classification (mandatory) | https://aistudio.google.com |
-| `POLYGON_API_KEY` | Stocks, ETFs, indices, forex (1-min REST) | https://polygon.io/dashboard/api-keys |
-| `DATABENTO_API_KEY` | Futures (paid) | https://databento.com |
-
-Binance crypto data needs **no key** — public klines endpoint is used directly.
-
-Without `POLYGON_API_KEY`, the agent automatically falls back to **yfinance** for stocks/ETFs/indices (limit: most recent 7 days of 1-min data). Forex has no free fallback.
-
-## Supported asset classes
-
-| Class | Source | Key needed | Coverage |
-|---|---|---|---|
-| Crypto | Binance | none | All Binance spot pairs (BTCUSDT, ETHUSDT, …) |
-| Stocks | Polygon (→ yfinance fallback) | Polygon or none | US listings |
-| ETFs | Polygon (→ yfinance fallback) | Polygon or none | US listings |
-| Indices | Polygon (→ yfinance fallback) | Polygon or none | SPX, NDX, DJI, RUT, VIX |
-| Forex | Polygon | Polygon | All major + cross pairs |
-| Futures | Databento (`GLBX.MDP3`) | Databento | CME futures, continuous front-month default |
-
-## Quick example
+> The strategy you described and the strategy trading your account are provably
+> the same object, and the agent can show you the proof.
 
 ```
-> python main.py
+$ ee-agent parity library/sweep-return-v1/spec.yaml --fixtures
 
-Enter an asset: Bitcoin
-How many days of 1-minute data? 7
-
-[CACHE MISS — fetching from Binance…]
-Rows fetched: 10,080
-
-Describe your strategy: Buy when the 9-period EMA crosses above the 21-period EMA on close.
-Sell when it crosses back below.
-
-[Gemini generates Python backtest code]
-[Code displayed for review]
-
-Run this backtest? yes
-
-════════════════════════════════════════
-   BACKTEST RESULTS — BTCUSDT
-════════════════════════════════════════
-  Total Return:     +X.XX%
-  Win Rate:         XX.XX%
-  Max Drawdown:     -X.XX%
-  Total Trades:     XXX
-  Sharpe Ratio:     X.XX
-  Chart saved to:   results/BTCUSDT_..._equity_curve.png
-════════════════════════════════════════
+[parity] sweep-return-v1 on MNQ 5m over 17,061 bars
+    python           37bcb3993135     223 signals  {'short': 114, 'long': 109}
+    pine_indicator   37bcb3993135     223 signals  {'short': 114, 'long': 109}
+    pine_strategy    37bcb3993135     223 signals  {'short': 114, 'long': 109}
+    live             37bcb3993135     223 signals  {'short': 114, 'long': 109}
+    AGREED -- all 4 targets produced the identical fingerprint 37bcb3993135.
 ```
 
-## CLI commands
+That is not four re-runs of one code path. The Python engine evaluates the
+compiled plan; a Pine interpreter parses and executes the **emitted Pine source
+text** bar by bar; the live config is rebuilt from its own JSON by the execution
+layer. Four independent paths, one fingerprint.
 
-| Command | Action |
+## Install
+
+```bash
+git clone https://github.com/everevolving365/trading-research-agent-v1.git
+cd trading-research-agent-v1
+pip install -e .
+ee-agent demo
+```
+
+`ee-agent demo` runs a complete backtest and a parity proof on committed fixture
+data. **No API key, no network, no cost.** That is deliberate — see the
+zero-cost floor below.
+
+Then describe your own strategy:
+
+```bash
+ee-agent capture              # talks you through it, interrogates until it is unambiguous
+ee-agent capture --voice      # same thing, out loud
+```
+
+## Bring your own key
+
+The product ships with nobody's credentials. You supply your own model key, your
+own data keys and your own TradingView subscription; the author carries zero
+per-user cost. `ee-agent wizard` walks you through obtaining each one, and
+`ee-agent secrets list` shows what each unlocks.
+
+Credentials go to your OS keychain (encrypted-file fallback), are never logged,
+are never sent to any model, and `ee-agent secrets delete NAME` removes one in a
+single command.
+
+### The zero-cost floor
+
+With **no keys at all**, the agent still: runs the full Python backtest engine,
+compiles specs to all four targets, runs walk-forward, Monte Carlo, lookahead
+detection and the parity proof, ingests any file you already have, pulls keyless
+crypto data, and runs local voice. You reach a real backtest before spending
+anything.
+
+## The three laws
+
+**Law One — never report a number you cannot defend.** Costs and slippage in
+every backtest. In-sample and out-of-sample always. A Monte Carlo band on every
+result. Lookahead detection on every run. Cache age printed on every load. A
+data quality score on every dataset. A single-window result literally prints
+*"SINGLE WINDOW -- not a defensible number on its own"*.
+
+**Law Two — one strategy, one object, provably.** The spec is the single source
+of truth. Python, Pine indicator, Pine strategy and live config are all compiled
+from it, and the parity harness proves they agree signal for signal.
+
+**Law Three — nothing untrusted runs unwatched.** Generated code is displayed
+before it executes and runs in a sandbox with no network, no API keys, one
+writable directory and a hard timeout. The position ledger refuses hedged orders
+at the order layer. The autonomy ladder gates live capital. Kill switches exist
+at strategy, account and global level.
+
+## What it does
+
+```bash
+ee-agent capture                            # describe your strategy; it interrogates you
+ee-agent compile <spec>                     # -> Python, Pine indicator, Pine strategy, live config
+ee-agent analyze <spec> --tearsheet         # the truth engine, plus the case against the result
+ee-agent parity <spec>                      # prove all four targets are the same strategy
+ee-agent operator <spec>                    # drive TradingView: paste, save, deep backtest, alerts
+ee-agent replay <spec> --sessions 5         # recorded history through the LIVE path
+ee-agent overnight <spec>                   # variants tested overnight, survivors only
+ee-agent scan <spec>                        # where the edge is strongest, marginal, or inverted
+ee-agent ledger verify                      # prove the track record was not written with hindsight
+ee-agent status                             # keys, positions, kill switches, spend
+ee-agent verify                             # every acceptance check for every phase
+```
+
+### A result looks like this
+
+```
+  sweep-return-v1 on MNQ 5m  [full]
+  Net P&L              -6,216.96     Trades               329
+  Max drawdown          6,295.37     Win rate          27.7%
+[walk-forward] rolling, 5 windows; 0 of 5 profitable out of sample
+[monte carlo] 2,000 block paths: drawdown median 6,393, 95th 8,514
+[lookahead] CLEAN -- 24 truncation points re-evaluated, every signal identical
+[combine] Topstep 50K: 0% of 1,000 simulated runs pass, 73% blow it
+[adversarial] the case against this result:
+    [SERIOUS] window dependence: Only 0 of 5 out-of-sample windows are profitable.
+    [SERIOUS] path dependence: Only 0% of resampled paths finish profitable.
+    VERDICT: 2 serious findings. This does not survive the adversarial pass.
+```
+
+It tells you when your strategy does not work. That is the product.
+
+## Architecture
+
+```
+  VOICE + CONVERSATION      whisper in, TTS out, interruptible, narration
+        |
+  CAPTURE                   interrogation engine, visual confirmation, ambiguity ledger
+        |
+  >>> THE STRATEGY SPEC <<< single source of truth
+        |
+  SUBSTRATE                 instrument registry | data resolver | order flow | integrity
+        |
+  COMPILERS                 Python backtest | Pine indicator | Pine strategy | live config
+        |
+  PARITY PROOF              signal fingerprint comparison across all four
+        |
+  EXECUTION                 broker adapters | position ledger | autonomy ladder | drift monitor
+        |
+  MOAT                      research index | verified signal ledger | tearsheets
+
+  OPERATOR (cross-cutting)  drives real software as a human would. Reads and configures only.
+                            NEVER places orders -- enforced by a test that greps the module.
+  COST NOTIFIER             estimates, informs, proceeds. Never blocks.
+```
+
+| module | what lives there |
 |---|---|
-| `help` | Show command list |
-| `refresh {SYMBOL}` | Delete cached data and re-fetch on next request |
-| `data {SYMBOL}` | Show cache info for a symbol |
-| `history` | List backtests run this session |
-| `clear` | Clear screen |
-| `exit` / `quit` | Leave the agent |
+| `ee_agent/spec/` | schema, validator, versioning, diffing, the primitive registry |
+| `ee_agent/capture/` | voice, interrogation, visual confirmation, intake, NL editing |
+| `ee_agent/instruments/` | tick size, tick value, sessions, holidays, rollover, correlation |
+| `ee_agent/data/` | source registry, resolver, integrity engine, ingestion, cache, paywall |
+| `ee_agent/flow/` | cumulative delta, absorption, volume profile, VWAP bands, liquidity map |
+| `ee_agent/compile/` | `to_python`, `to_pine_indicator`, `to_pine_strategy`, `to_live` |
+| `ee_agent/engine/` | backtester, fills, costs, walk-forward, Monte Carlo, lookahead, adversarial |
+| `ee_agent/prop/` | one rule pack per firm, and the combine simulator |
+| `ee_agent/parity/` | the Pine interpreter, fingerprinting, the harness |
+| `ee_agent/sandbox/` | isolated execution of generated code |
+| `ee_agent/operator/` | browser control, credential vault, audit trail |
+| `ee_agent/execution/` | adapters, position ledger, autonomy, drift, kill switches, replay |
+| `ee_agent/research/` | research index, hypothesis queue, overnight loop, scanner, calendar |
+| `ee_agent/ledger/` | the verified signal ledger |
+| `ee_agent/cost/` | estimation, notification, running total |
 
-## How it works (one paragraph)
+## Cost transparency
 
-`main.py` runs a loop. Your input goes through `agent/classifier.py` (rules first, Gemini fallback) which assigns one of {STOCK, CRYPTO, FOREX, FUTURES, ETF, INDEX} and normalizes the symbol. `agent/router.py` picks the right fetcher under `fetchers/`. Every fetcher returns the **same** columns: `Date, Symbol, Open, High, Low, Close, Volume`. Data is cached at `data/{SYMBOL}/{SYMBOL}_1min.csv` and re-used. `agent/strategy_engine.py` ships your English description + a data summary to Gemini, which writes a runnable Python script. The script is **shown to you first**, then `agent/backtest_runner.py` executes it in a subprocess, parses the printed metrics, and renders the result block. Gemini provides a short prose interpretation. Failed backtests can be sent back to Gemini for an automated fix.
+The agent never refuses an operation on cost grounds — it is not a gatekeeper.
+Before anything with meaningful cost it tells you the estimate and what it
+covers, then proceeds. A running total is always visible, every cost is written
+into the research index next to the result it produced, and you may optionally
+set your own ceiling. If you set one and it is reached, the agent tells you and
+**asks** — it does not silently stop.
 
-## File layout
+## Honest limits
 
+1. **TradingView has no API for running backtests and never has.** The Operator
+   closes this by driving the browser, but that is automation: slower, breaks
+   when the interface changes, and Deep Backtesting needs Premium. Deep results
+   appear only in the Strategy Tester report panel; the chart's trades come from
+   the regular backtest and will not match — so the Operator **refuses** to read
+   the chart's trade list rather than return a wrong number.
+2. **Scraping arbitrary sites for minute data will not hold.** The source
+   registry, the fallback ladder and universal ingestion deliver the same
+   capability and stay standing.
+3. **Order flow does not exist for most assets and is paid for the rest.** The
+   flow layer degrades to bar-derived proxies and *says so on every call*.
+4. **Prop firm rules do not apply to spot crypto or equities.** The rule-pack
+   layer is optional per instrument, driven by the registry.
+5. **Some strategies cannot be expressed exactly in Pine.** Where that happens
+   the agent states precisely what differs and by how much
+   (`pine_limitations()`), rather than shipping a silent approximation.
+
+## Development
+
+```bash
+pip install -r requirements-dev.txt
+make verify        # every acceptance check for every phase, zero credentials
+make test          # the pytest suite
 ```
-everevolving-trading-agent/
-├── main.py
-├── .env / .env.example / requirements.txt / .gitignore
-├── agent/
-│   ├── classifier.py
-│   ├── router.py
-│   ├── gemini_client.py
-│   ├── strategy_engine.py
-│   └── backtest_runner.py
-├── fetchers/
-│   ├── base_fetcher.py
-│   ├── binance_fetcher.py
-│   ├── polygon_fetcher.py
-│   ├── databento_fetcher.py
-│   └── yfinance_fetcher.py
-├── data/        # auto-created cache per symbol
-├── backtests/   # per-run generated code + results.txt
-└── results/     # per-run equity curve PNG
-```
 
-## Notes
+`BUILD-LOG.md` is the resume file, `DECISIONS.md` records every decision made
+autonomously, `BLOCKERS.md` lists what is still needed from the owner, and
+`docs/STATUS.md` reports the state of all 83 abilities.
 
-- AI-generated code is **never** executed silently. You confirm every run.
-- Cache is never auto-invalidated. Use `refresh {SYMBOL}` to force re-fetch.
-- Subprocess timeout for any backtest run: 120 seconds.
-- Chart is saved to disk only (no auto-open).
+v1 (the Gemini-backed research CLI) is preserved under `legacy/v1/`.
+
+## Licence
+
+MIT. Not financial advice: this software executes the strategy and risk rules
+its operator supplies. Trading futures and other leveraged instruments involves
+substantial risk of loss.

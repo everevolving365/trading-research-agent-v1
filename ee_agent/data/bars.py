@@ -113,7 +113,10 @@ class Bars:
         arr = np.ascontiguousarray(
             np.column_stack(
                 [
-                    self.df["ts"].astype("int64").to_numpy(),
+                    # normalise to nanoseconds first: pandas may store us or ns
+                    # depending on version, and a pinned artifact must hash the
+                    # same on every machine.
+                    self.df["ts"].astype("datetime64[ns]").astype("int64").to_numpy(),
                     self.open,
                     self.high,
                     self.low,

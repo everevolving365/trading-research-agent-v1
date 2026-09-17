@@ -44,7 +44,7 @@ class LivePlan:
 
     def evaluate(self, bars, instrument=None) -> LiveSignals:
         cfg = self.config
-        rt = prim.Runtime(bars, instrument=instrument, spec=None)
+        rt = prim.Runtime(bars, instrument=instrument, spec=None, strategy_tz=self.timezone)
         n = len(bars)
 
         for block in cfg.get("contexts", []):

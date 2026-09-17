@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ee-agent"
+version = "2.0.0"
+description = "A voice-native, deeply autonomous trading agent that proves the strategy you described and the strategy trading your account are the same object."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+authors = [{name = "Arinze (EverEvolving365)"}]
+keywords = ["trading", "backtesting", "pine-script", "futures", "prop-firm", "tradingview"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Office/Business :: Financial :: Investment",
+]
+dependencies = ["pyyaml>=6.0", "numpy>=1.26.0", "pandas>=2.1.0"]
+
+[project.optional-dependencies]
+data = ["requests>=2.31.0", "yfinance>=0.2.40", "polygon-api-client>=1.13.0", "databento>=0.35.0"]
+secrets = ["keyring>=24.0.0", "cryptography>=42.0.0"]
+voice = ["faster-whisper>=1.0.0", "pyttsx3>=2.90", "sounddevice>=0.4.6"]
+operator = ["playwright>=1.44.0", "pillow>=10.0.0"]
+charts = ["matplotlib>=3.8.0"]
+dev = ["pytest>=8.0.0", "pytest-cov>=5.0.0"]
+all = ["requests>=2.31.0", "keyring>=24.0.0", "cryptography>=42.0.0", "matplotlib>=3.8.0"]
+
+[project.scripts]
+ee-agent = "ee_agent.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/everevolving365/trading-research-agent-v1"
+Issues = "https://github.com/everevolving365/trading-research-agent-v1/issues"
+
+[tool.setuptools.packages.find]
+include = ["ee_agent*"]
+
+[tool.setuptools.package-data]
+ee_agent = ["instruments/*.yaml", "prop/firms/*.yaml", "research/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]

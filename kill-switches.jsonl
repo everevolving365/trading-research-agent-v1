@@ -1,0 +1,3 @@
+{"ts": "2026-09-17T05:18:43.319620+00:00", "scope": "account", "name": "a", "tripped": true, "reason": "daily loss -600.00 breached the 500.00 limit", "tripped_at": "2026-09-17T05:18:43.318402+00:00"}
+{"ts": "2026-09-17T05:18:43.321218+00:00", "scope": "strategy", "name": "s", "tripped": true, "reason": "4 consecutive losses (limit 3)", "tripped_at": "2026-09-17T05:18:43.320192+00:00"}
+{"ts": "2026-09-17T05:18:43.322534+00:00", "scope": "global", "name": "global", "tripped": true, "reason": "order latency 5000ms exceeds 2000ms", "tripped_at": "2026-09-17T05:18:43.321632+00:00"}
