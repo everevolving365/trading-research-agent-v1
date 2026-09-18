@@ -1,13 +1,22 @@
 # BUILD LOG
-Last updated: 2026-09-17
+Last updated: 2026-09-18
 
 ## CURRENT STATE
-Phase: 12 — Completeness sweep — **acceptance PASSED**
-Status: all twelve phases complete. `make verify` runs 41/41 green on a clean
-clone with zero credentials; `make test` runs 172/172.
+Phase: 13 — Conversation and source discovery — **acceptance PASSED**
+Status: thirteen phases complete. `make verify` runs 46 acceptance checks on a
+clean clone with zero credentials; `make test` runs 197 tests.
 Next action: nothing is blocking. When the owner supplies any item from
 BLOCKERS.md, wire it in — start with B-003 (the two original `.pine` files),
 which is the smallest and unlocks the regression baseline in `docs/STATUS.md`.
+
+## HOW TO RESUME COLD
+Say "continue from BUILD-LOG.md". Then:
+
+1. The clone lives in the **`repo` subfolder**, not in "Day trader" directly:
+   `Desktop/Day trader/repo`
+2. `git pull` — origin/main is always current; every phase is pushed.
+3. `make verify` to confirm the state you inherited (about 13 minutes).
+4. Read OPEN THREADS at the bottom of this file and pick the top item.
 
 ## PHASE STATUS
 - [x] Phase 0 — Foundation and autonomy infrastructure — acceptance PASSED 2026-09-17
@@ -23,13 +32,16 @@ which is the smallest and unlocks the regression baseline in `docs/STATUS.md`.
 - [x] Phase 10 — Autonomy and research — acceptance PASSED 2026-09-17
 - [x] Phase 11 — Moat and polish — acceptance PASSED 2026-09-17
 - [x] Phase 12 — Completeness sweep — acceptance PASSED 2026-09-17
+- [x] Phase 13 — Conversation and source discovery — acceptance PASSED 2026-09-18
 
 ## HOW TO CHECK THE BUILD YOURSELF
 
 ```bash
-make verify        # 41 acceptance checks, every phase, zero credentials, ~12 min
-make test          # 172 tests, ~11 min
+make verify        # 46 acceptance checks, every phase, zero credentials, ~13 min
+make test          # 197 tests, ~12 min
 ee-agent demo      # a real backtest plus a parity proof, no keys
+ee-agent chat      # talk to it about anything; it drives all 16 tools
+ee-agent sources "1-minute copper futures history"    # find data for anything
 ```
 
 The single most important line of output:
@@ -46,7 +58,7 @@ The single most important line of output:
 That is the one-sentence test, answered. It holds on MNQ, ES, SPY, EURUSD and
 BTCUSDT — futures, equity, forex and crypto, in three exchange timezones.
 
-## COMPLETED THIS SESSION
+## COMPLETED
 
 **Phase 0** — `secrets/` with `get_secret()` over OS keychain → encrypted file →
 environment; `.env.example` and `config/client.example.yaml` listing every key,
@@ -111,7 +123,22 @@ hashed payload), founder's library offered once, one-command install, first-run
 wizard, free-tier demo.
 
 **Phase 12** — `ee_agent/verify.py`, `docs/STATUS.md`, this file, DECISIONS.md
-(14 entries) and BLOCKERS.md (7 entries).
+and BLOCKERS.md.
+
+**Phase 13** — the two items the owner rejected as `partial`, now `done`:
+
+*Conversation* (`ee_agent/conversation/`, D-018). `ee-agent chat` is a tool-using
+agent, not a chat window — 16 tools covering capture, interrogation, data
+loading and discovery, backtest, compile, parity, the Operator, order flow, the
+library, the research index and spend. Anthropic, OpenAI, Gemini, or none. Two
+guard rails in code rather than in the prompt: no conversational tool can reach
+the order layer (a test greps for it), and `answer_question` refuses a
+non-answer like "whatever you think is best" rather than inventing a risk rule.
+
+*Source discovery* (`ee_agent/data/discovery.py`, D-019). `ee-agent sources`
+searches a curated 16-vendor catalogue offline with no key, plus live web search
+through the client's own Brave/Tavily/SerpAPI key. Ranks by asset class,
+resolution, order-flow availability and cost; ranks scraper-access sources down.
 
 ## BUGS THE BUILD'S OWN CHECKS CAUGHT
 
@@ -130,20 +157,31 @@ Worth reading, because each was silent and each would have cost money:
    nanoseconds; pandas 3 stores microseconds, so every gap was scaled by 1/1000
    and the check reported clean on a dataset with a hole in it. (D-014)
 6. **A whole missing trading day was forgiven as an overnight break**, and a
-   truncated session scored 1.00. Both now detected.
+   truncated session scored 1.00. Both now detected. (D-016)
 7. **The source ladder ranked fixtures above live sources** — the agent would
-   have served recorded data instead of the market.
+   have served recorded data instead of the market. (D-015)
 8. **`\b` does not match before an underscore**, so `MNQ_5m_2026-03-02.png` had
    its symbol read as unknown.
+9. **`takeprofit.yaml` did not parse at all** — `- Note: text` in a YAML list is
+   a mapping key, not a string. Nothing noticed because the test only loaded
+   Topstep. (D-017)
+10. **A test that set a spend ceiling left it set for every test after it** —
+    the cost ledger is a process global.
 
 ## OPEN THREADS
 
 None blocking. Ordered by value if the owner wants more built:
 
+- **Ability 15, screenshot intake.** Fill-history reconstruction is complete.
+  Reading the markup drawn on a chart screenshot needs a vision model; the
+  interface is in place (`read_screenshots(paths, model=...)`) and only the
+  provider call is missing.
+- **Ability 31, export portals.** The Operator navigates and downloads and the
+  ingestion handoff works; each venue needs its own selector set, which is
+  configuration in `SELECTORS`, not a rewrite.
 - Wire in the originals from B-003 and report the signal-count delta.
 - Run the Operator against the real TradingView site once B-001 lands; expect
   selector corrections, which is why they are all in one `SELECTORS` dict.
 - Refresh `research/calendar.json` CPI dates from the BLS schedule (B-007).
-- A model-backed extractor layered on top of `capture/parser.py` for strategy
-  descriptions the deterministic parser cannot reach. The interface is already
-  in place: the parser reports what it could not parse.
+- Add a fetcher for any vendor the client picks from `ee-agent sources`. The
+  interface is `Fetcher` in `ee_agent/data/sources.py`; each one is ~40 lines.

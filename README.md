@@ -43,12 +43,19 @@ ee-agent demo
 data. **No API key, no network, no cost.** That is deliberate — see the
 zero-cost floor below.
 
-Then describe your own strategy:
+Then talk to it, or describe your strategy directly:
 
 ```bash
-ee-agent capture              # talks you through it, interrogates until it is unambiguous
-ee-agent capture --voice      # same thing, out loud
+ee-agent chat                 # open-ended conversation; it drives the whole agent
+ee-agent chat --voice         # same thing, out loud
+ee-agent capture              # straight to the structured intake
 ```
+
+`chat` is a tool-using agent, not a chat window. Ask it to pull a year of MNQ and
+backtest your opening-range idea and it loads the data and runs the truth engine,
+then reads you the case against the result. It cannot place an order — order
+placement lives behind the position ledger and a conversational model does not
+get to reach it.
 
 ## Bring your own key
 
@@ -90,7 +97,9 @@ at strategy, account and global level.
 ## What it does
 
 ```bash
+ee-agent chat                               # talk to it about anything; it runs every tool it has
 ee-agent capture                            # describe your strategy; it interrogates you
+ee-agent sources "<what data you need>"     # find where to get data for any asset
 ee-agent compile <spec>                     # -> Python, Pine indicator, Pine strategy, live config
 ee-agent analyze <spec> --tearsheet         # the truth engine, plus the case against the result
 ee-agent parity <spec>                      # prove all four targets are the same strategy
@@ -148,9 +157,10 @@ It tells you when your strategy does not work. That is the product.
 | module | what lives there |
 |---|---|
 | `ee_agent/spec/` | schema, validator, versioning, diffing, the primitive registry |
+| `ee_agent/conversation/` | the tool-using chat agent, model clients, the 16 tools |
 | `ee_agent/capture/` | voice, interrogation, visual confirmation, intake, NL editing |
 | `ee_agent/instruments/` | tick size, tick value, sessions, holidays, rollover, correlation |
-| `ee_agent/data/` | source registry, resolver, integrity engine, ingestion, cache, paywall |
+| `ee_agent/data/` | source registry, resolver, discovery, integrity engine, ingestion, cache, paywall |
 | `ee_agent/flow/` | cumulative delta, absorption, volume profile, VWAP bands, liquidity map |
 | `ee_agent/compile/` | `to_python`, `to_pine_indicator`, `to_pine_strategy`, `to_live` |
 | `ee_agent/engine/` | backtester, fills, costs, walk-forward, Monte Carlo, lookahead, adversarial |

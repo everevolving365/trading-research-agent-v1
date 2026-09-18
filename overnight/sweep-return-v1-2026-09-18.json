@@ -1,6 +1,6 @@
 {
-  "started": "2026-09-18T19:57:33.487749+00:00",
-  "finished": "2026-09-18T19:58:55.650462+00:00",
+  "started": "2026-09-18T20:10:41.056410+00:00",
+  "finished": "2026-09-18T20:12:03.369676+00:00",
   "spec_id": "sweep-return-v1",
   "symbol": "MNQ",
   "n_variants": 4,
@@ -10,9 +10,9 @@
     {
       "description": "original (unchanged)",
       "spec_id": "sweep-return-v1",
-      "net_pnl": -1258.48,
-      "oos_net_pnl": -1103.7,
-      "sharpe": -7.1744713054037295,
+      "net_pnl": -1257.98,
+      "oos_net_pnl": -1101.7,
+      "sharpe": -7.172106823037987,
       "n_trades": 102,
       "survived": false,
       "verdict": "4 serious findings. This does not survive the adversarial pass.",
@@ -23,7 +23,7 @@
       "description": "stop x0.75, target x0.75",
       "spec_id": "sweep-return-v1-v1",
       "net_pnl": -2114.98,
-      "oos_net_pnl": -1445.2000000000003,
+      "oos_net_pnl": -1442.7000000000003,
       "sharpe": -15.909907145331411,
       "n_trades": 102,
       "survived": false,
@@ -35,7 +35,7 @@
       "description": "stop x0.75, target x0.75, start +30m",
       "spec_id": "sweep-return-v1-v2",
       "net_pnl": -1407.5400000000004,
-      "oos_net_pnl": -702.76,
+      "oos_net_pnl": -703.26,
       "sharpe": -11.964508192055941,
       "n_trades": 96,
       "survived": false,
@@ -47,8 +47,8 @@
       "description": "stop x0.75",
       "spec_id": "sweep-return-v1-v3",
       "net_pnl": -1883.48,
-      "oos_net_pnl": -1343.2000000000003,
-      "sharpe": -12.683150130784927,
+      "oos_net_pnl": -1340.7000000000003,
+      "sharpe": -12.683150130784924,
       "n_trades": 102,
       "survived": false,
       "verdict": "3 serious findings. This does not survive the adversarial pass.",
@@ -57,6 +57,6 @@
     }
   ],
   "cost_usd": 0.0765,
-  "corrected_sharpe": -8.0312,
+  "corrected_sharpe": -8.0285,
   "notes": []
 }
