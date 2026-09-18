@@ -850,6 +850,105 @@ def _phase11_library() -> str:
     return f"{len(entries)} entry(ies); sweep-return-v1 is a full spec ({spec.short_hash}), not just a script"
 
 
+# ----------------------------------------------------- phase 13 (conversation)
+@check(13, "conversation runs with no key", "the agent talks and says plainly what it cannot do without a model")
+def _phase13_no_key() -> str:
+    from ee_agent.conversation.agent import Conversation
+    from ee_agent.conversation.model import NullModel
+
+    answer = Conversation(model=NullModel(), sink=lambda _m: None).say("what do you make of gold here?")
+    assert "no model key" in answer.lower(), "the no-key path did not explain itself"
+    assert "everything else still works" in answer.lower(), "it did not say what still works"
+    return "no-key conversation answers and names the boundary"
+
+
+@check(13, "conversation operates the agent", "the model drives capture, data, compile and parity through tools", simulated="with a scripted model, so no API key is needed")
+def _phase13_tools() -> str:
+    import json as _json
+
+    from ee_agent.conversation import tools as toolbox
+    from ee_agent.conversation.agent import Conversation
+    from tests.fake_model import ScriptedModel
+
+    toolbox.reset_workspace()
+    transcript = (REPO / "tests/fixtures/transcripts/sweep-return.txt").read_text(encoding="utf-8")
+    model = ScriptedModel(
+        script=[
+            {"tools": [{"name": "describe_strategy", "arguments": {"text": transcript, "strategy_id": "verify-chat"}}]},
+            {"tools": [{"name": "load_data", "arguments": {"symbol": "MNQ", "fixtures_only": True}}]},
+            {"tools": [{"name": "compile_indicator", "arguments": {}}]},
+            {"tools": [{"name": "prove_parity", "arguments": {}}]},
+            {"text": "done"},
+        ]
+    )
+    Conversation(model=model, sink=lambda _m: None).say(transcript)
+    captured, loaded, compiled, parity = [_json.loads(r) for r in model.tool_results_seen]
+    assert "MNQ" in captured["understood"]["instruments"]
+    assert loaded["bars"] > 1000
+    assert compiled["indicator_pine"].startswith("//@version=5")
+    assert parity["agreed"] is True
+    toolbox.reset_workspace()
+    return (
+        f"captured -> loaded {loaded['bars']:,} bars -> compiled Pine -> parity AGREED, "
+        f"{len(toolbox.REGISTRY)} tools available"
+    )
+
+
+@check(13, "conversation cannot place an order", "no conversational tool reaches the order layer")
+def _phase13_no_orders() -> str:
+    import re as _re
+
+    from ee_agent.conversation import tools as toolbox
+
+    source = (REPO / "ee_agent/conversation/tools.py").read_text(encoding="utf-8")
+    assert "OrderRouter" not in source and "execution.router" not in source
+    order_call = _re.compile(r"(?:place_order|submit_order|send_order|OrderIntent\()")
+    for line in source.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#") or "FORBIDDEN" in line or stripped.startswith('"'):
+            continue
+        assert not order_call.search(line), f"conversational tool reaches the order layer: {stripped[:60]}"
+    return f"{len(toolbox.REGISTRY)} tools, none can place an order"
+
+
+@check(13, "web search for data sources", "the agent finds sources for an asset it has no fetcher for")
+def _phase13_discovery() -> str:
+    from ee_agent.data.discovery import discover_sources, infer_asset_class
+
+    offline = discover_sources("1-minute copper futures history", use_web=False)
+    assert offline.candidates, "found nothing offline"
+    flow = discover_sources("order flow footprint data for NQ futures", use_web=False)
+    assert flow.candidates[0].has_order_flow, "an order-flow request did not rank a flow source first"
+    assert infer_asset_class("bitcoin minute bars") == "crypto"
+    live = discover_sources("exotic commodity data", use_web=True)
+    assert live.search_note, "web search did not report what it did"
+    return (
+        f"{len(offline.candidates)} catalogue source(s) offline; web layer reports: "
+        f"{live.search_note[:60]}"
+    )
+
+
+@check(13, "cost never blocks the conversation", "no ceiling means no stop, and a client ceiling asks rather than halting")
+def _phase13_cost() -> str:
+    from ee_agent.conversation.agent import Conversation
+    from ee_agent.cost.notifier import CostLedger, ledger, set_ledger
+    from tests.fake_model import ScriptedModel
+
+    previous = ledger()
+    try:
+        set_ledger(CostLedger(ceiling_usd=None, notify_threshold_usd=10**9, sink=lambda _m: None))
+        model = ScriptedModel(script=[{"text": "ok", "input_tokens": 10**6, "output_tokens": 10**6}])
+        assert Conversation(model=model, sink=lambda _m: None).say("go") == "ok", "cost blocked with no ceiling"
+
+        set_ledger(CostLedger(ceiling_usd=0.001, notify_threshold_usd=10**9, sink=lambda _m: None))
+        model = ScriptedModel(script=[{"text": "ok", "input_tokens": 10**6, "output_tokens": 10**6}])
+        answer = Conversation(model=model, sink=lambda _m: None).say("go")
+        assert "ceiling" in answer.lower() and "have not stopped" in answer.lower()
+    finally:
+        set_ledger(previous)
+    return "unbounded spend proceeds; a client-set ceiling asks and says nothing was stopped"
+
+
 # ----------------------------------------------------------------- runner
 def run_all(quick: bool = False, phases: list[int] | None = None) -> int:
     from ee_agent.cost.notifier import CostLedger, set_ledger

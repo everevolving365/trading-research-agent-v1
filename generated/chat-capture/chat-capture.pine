@@ -1,0 +1,60 @@
+//@version=5
+// Chat Capture -- signal indicator
+// GENERATED from spec chat-capture (sha256:229294a0ddd4f58344291bee5eb2aadf0c69d97913ba771449946c335b8c2d84)
+// Compiled by ee_agent.compile.to_pine. Do not hand-edit: regenerate from the spec.
+indicator("Chat Capture", overlay=true, max_labels_count=500)
+
+// ---- generated context -------------------------------------------------
+// context opening_range: session range 0830-0930:1234567
+opening_range_in = not na(time(timeframe.period, "0830-0930:1234567", "America/Chicago"))
+var float opening_range_high = na
+var float opening_range_low  = na
+var bool  opening_range_done = false
+opening_range_newday = ta.change(time("D")) != 0
+if opening_range_newday
+    opening_range_high := na
+    opening_range_low  := na
+    opening_range_done := false
+if opening_range_in
+    opening_range_high := na(opening_range_high) ? high : math.max(opening_range_high, high)
+    opening_range_low  := na(opening_range_low)  ? low  : math.min(opening_range_low,  low)
+if not opening_range_in and not na(opening_range_high)
+    opening_range_done := true
+win_0 = not na(time(timeframe.period, "0930-1500:1234567", "America/Chicago"))
+// c_short_0: break of opening_range (high, confirm=wick)
+var bool c_short_0 = false
+if opening_range_newday
+    c_short_0 := false
+if opening_range_done and ((not na(opening_range_high) and high > opening_range_high))
+    c_short_0 := true
+// c_short_1: return inside opening_range (high, confirm=close, mode=cross)
+// c_long_0: break of opening_range (low, confirm=wick)
+var bool c_long_0 = false
+if opening_range_newday
+    c_long_0 := false
+if opening_range_done and ((not na(opening_range_low) and low < opening_range_low))
+    c_long_0 := true
+// c_long_1: return inside opening_range (low, confirm=close, mode=cross)
+
+// ---- filters ------------------------------------------------------------
+inWindow = win_0
+
+// ---- signals ------------------------------------------------------------
+sig_short = (c_short_0 and ((not na(opening_range_high) and close < opening_range_high) and (high > opening_range_high or (not na(opening_range_high[1]) and close[1] >= opening_range_high[1])))) and inWindow and barstate.isconfirmed
+sig_long = (c_long_0 and ((not na(opening_range_low) and close > opening_range_low) and (low < opening_range_low or (not na(opening_range_low[1]) and close[1] <= opening_range_low[1])))) and inWindow and barstate.isconfirmed
+longSignal  = sig_long
+shortSignal = sig_short
+
+// ---- arrows -------------------------------------------------------------
+plotshape(longSignal, title="Long", style=shape.triangleup, location=location.belowbar, color=color.new(color.lime, 0), size=size.small, text="LONG")
+plotshape(shortSignal, title="Short", style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 0), size=size.small, text="SHORT")
+plot(opening_range_done ? opening_range_high : na, "opening_range high", color.new(color.gray, 0), 1, plot.style_linebr)
+plot(opening_range_done ? opening_range_low  : na, "opening_range low",  color.new(color.gray, 0), 1, plot.style_linebr)
+
+// ---- alerts (ability 51: the indicator drives live execution) ------------
+alertcondition(longSignal,  title="Long signal",  message="chat-capture LONG {{ticker}} @ {{close}}")
+alertcondition(shortSignal, title="Short signal", message="chat-capture SHORT {{ticker}} @ {{close}}")
+if longSignal
+    alert("chat-capture LONG " + syminfo.ticker + " @ " + str.tostring(close), alert.freq_once_per_bar_close)
+if shortSignal
+    alert("chat-capture SHORT " + syminfo.ticker + " @ " + str.tostring(close), alert.freq_once_per_bar_close)

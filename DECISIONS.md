@@ -274,3 +274,50 @@ Chosen: (b), and the test now loads *every* firm rather than the default one.
 Reasoning: rule packs are data the owner will edit. They must tolerate ordinary
 prose, and the test must cover all of them or the next one added breaks silently.
 Reversible: no reason to.
+
+---
+
+## D-018 — The conversation is a tool-using agent, not a chat window
+Date: 2026-09-18
+Context: ability 4 ("deep conversation on any subject") shipped as `partial` in
+the first pass -- all the domain logic worked, but there was no way to simply
+talk to the agent. The owner rejected that, correctly: his list names it and
+says nothing on it is optional.
+Options: (a) a plain chat wrapper that answers questions about trading; (b) a
+conversation with tool access to the entire system.
+Chosen: (b). Sixteen tools cover capture, interrogation, data, discovery,
+backtest, compile, parity, Operator, order flow, library, research index and
+spend. The model does the work rather than describing it.
+Reasoning: a chat window that says "you could run a backtest" is worse than no
+chat window -- the client already has the CLI. The value is that "backtest my
+idea on a year of MNQ" actually loads the data and runs the truth engine.
+Guard rails, enforced in code not prompt: no conversational tool can reach the
+order layer (a test greps for it), and no tool invents a strategy or a risk rule
+-- `answer_question` refuses a non-answer like "whatever you think is best"
+rather than filling the gap itself.
+Reversible: yes -- it is an additive package plus one CLI command.
+
+---
+
+## D-019 — Source discovery finds vendors, not scrapers
+Date: 2026-09-18
+Context: ability 17 ("searches the web to find data") shipped as `partial`
+because Section 9 limit 2 says scraping arbitrary sites will not hold. That
+reasoning was sound about the MECHANISM and wrong as a reason not to ship the
+CAPABILITY.
+Options: (a) leave it unbuilt and cite Section 9; (b) scrape price data from
+whatever the search turns up; (c) search for data SOURCES and hand off to a key
+or a file.
+Chosen: (c), in two layers. A curated catalogue of 16 real vendors is searched
+offline with no key and no network; live web search runs through the client's
+own Brave, Tavily or SerpAPI key when they have one. Results are ranked by asset
+class, resolution, order-flow availability and cost, and a scraper-access source
+is ranked DOWN.
+Reasoning: (b) is the thing Section 9 warns about -- a strategy resting on a
+scraper stops working without warning. (a) leaves a stated requirement unbuilt.
+(c) delivers what the owner asked for through the mechanism that survives
+contact with reality, and universal ingestion means any file found this way is
+readable without the client describing its schema.
+Reversible: yes.
+Honest limit: the catalogue's prices and coverage will drift. Each entry carries
+a vendor URL and the file says to verify before relying on a number.

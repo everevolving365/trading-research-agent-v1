@@ -1,0 +1,69 @@
+//@version=5
+// Chat Capture -- strategy script (Strategy Tester / Deep Backtesting)
+// GENERATED from spec chat-capture (sha256:229294a0ddd4f58344291bee5eb2aadf0c69d97913ba771449946c335b8c2d84)
+strategy("Chat Capture [strategy]", overlay=true, default_qty_type=strategy.fixed, default_qty_value=1, pyramiding=0, commission_type=strategy.commission.cash_per_contract, commission_value=2.37, slippage=1, calc_on_every_tick=false, process_orders_on_close=true, initial_capital=50000)
+
+// ---- generated context -------------------------------------------------
+// context opening_range: session range 0830-0930:1234567
+opening_range_in = not na(time(timeframe.period, "0830-0930:1234567", "America/Chicago"))
+var float opening_range_high = na
+var float opening_range_low  = na
+var bool  opening_range_done = false
+opening_range_newday = ta.change(time("D")) != 0
+if opening_range_newday
+    opening_range_high := na
+    opening_range_low  := na
+    opening_range_done := false
+if opening_range_in
+    opening_range_high := na(opening_range_high) ? high : math.max(opening_range_high, high)
+    opening_range_low  := na(opening_range_low)  ? low  : math.min(opening_range_low,  low)
+if not opening_range_in and not na(opening_range_high)
+    opening_range_done := true
+win_0 = not na(time(timeframe.period, "0930-1500:1234567", "America/Chicago"))
+// c_short_0: break of opening_range (high, confirm=wick)
+var bool c_short_0 = false
+if opening_range_newday
+    c_short_0 := false
+if opening_range_done and ((not na(opening_range_high) and high > opening_range_high))
+    c_short_0 := true
+// c_short_1: return inside opening_range (high, confirm=close, mode=cross)
+// c_long_0: break of opening_range (low, confirm=wick)
+var bool c_long_0 = false
+if opening_range_newday
+    c_long_0 := false
+if opening_range_done and ((not na(opening_range_low) and low < opening_range_low))
+    c_long_0 := true
+// c_long_1: return inside opening_range (low, confirm=close, mode=cross)
+
+inWindow = win_0
+stopDist = 25.0
+targetDist = 50.0
+
+sig_short = (c_short_0 and ((not na(opening_range_high) and close < opening_range_high) and (high > opening_range_high or (not na(opening_range_high[1]) and close[1] >= opening_range_high[1])))) and inWindow and barstate.isconfirmed
+sig_long = (c_long_0 and ((not na(opening_range_low) and close > opening_range_low) and (low < opening_range_low or (not na(opening_range_low[1]) and close[1] <= opening_range_low[1])))) and inWindow and barstate.isconfirmed
+longSignal  = sig_long
+shortSignal = sig_short
+
+var int tradesToday = 0
+if ta.change(time("D")) != 0
+    tradesToday := 0
+canTrade = tradesToday < 2
+
+// ---- entries ------------------------------------------------------------
+if longSignal and canTrade and strategy.position_size == 0
+    strategy.entry("long", strategy.long)
+    tradesToday += 1
+if shortSignal and canTrade and strategy.position_size == 0
+    strategy.entry("short", strategy.short)
+    tradesToday += 1
+
+// ---- exits: the client's risk rules, applied unaltered -------------------
+strategy.exit("x-long",  from_entry="long",  stop=strategy.position_avg_price - stopDist, limit=strategy.position_avg_price + targetDist)
+strategy.exit("x-short", from_entry="short", stop=strategy.position_avg_price + stopDist, limit=strategy.position_avg_price - targetDist)
+flattenNow = not na(time(timeframe.period, "1500-2359:1234567", "America/Chicago"))
+if flattenNow and strategy.position_size != 0
+    strategy.close_all(comment="session flatten")
+
+// ---- alerts --------------------------------------------------------------
+alertcondition(longSignal,  title="Long entry",  message="LONG {{ticker}} @ {{close}}")
+alertcondition(shortSignal, title="Short entry", message="SHORT {{ticker}} @ {{close}}")

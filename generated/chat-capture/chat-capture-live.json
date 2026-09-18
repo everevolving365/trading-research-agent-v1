@@ -1,0 +1,150 @@
+{
+  "alerts": {
+    "long": {
+      "plan_hash": "sha256:c4ecc6669b127a33cc7ce0cbd897cba04801d3882d6429829b99987bcf14d271",
+      "price": "{{close}}",
+      "side": "long",
+      "signature": "<hmac-sha256 of the fields above, keyed by the client's webhook secret>",
+      "spec_hash": "sha256:229294a0ddd4f58344291bee5eb2aadf0c69d97913ba771449946c335b8c2d84",
+      "spec_id": "chat-capture",
+      "symbol": "{{ticker}}",
+      "time": "{{timenow}}"
+    },
+    "short": {
+      "plan_hash": "sha256:c4ecc6669b127a33cc7ce0cbd897cba04801d3882d6429829b99987bcf14d271",
+      "price": "{{close}}",
+      "side": "short",
+      "signature": "<hmac-sha256 of the fields above, keyed by the client's webhook secret>",
+      "spec_hash": "sha256:229294a0ddd4f58344291bee5eb2aadf0c69d97913ba771449946c335b8c2d84",
+      "spec_id": "chat-capture",
+      "symbol": "{{ticker}}",
+      "time": "{{timenow}}"
+    }
+  },
+  "autonomy": {
+    "level": 1
+  },
+  "contexts": [
+    {
+      "id": "opening_range",
+      "type": "session_range",
+      "window": {
+        "end": "09:30",
+        "start": "08:30"
+      }
+    }
+  ],
+  "costs": {
+    "commission_per_side": {
+      "unit": "currency",
+      "value": 2.0
+    },
+    "exchange_fees_per_side": {
+      "unit": "currency",
+      "value": 0.0
+    },
+    "slippage": {
+      "unit": "ticks",
+      "value": 1.0
+    },
+    "slippage_model": "volume_volatility",
+    "spread": {
+      "unit": "ticks",
+      "value": 0.0
+    }
+  },
+  "entries": [
+    {
+      "all_of": [
+        {
+          "confirm": "wick",
+          "reference": "opening_range",
+          "side": "high",
+          "type": "range_break"
+        },
+        {
+          "confirm": "close",
+          "reference": "opening_range",
+          "side": "high",
+          "type": "return_inside"
+        }
+      ],
+      "any_of": [],
+      "id": "short",
+      "none_of": [],
+      "side": "short",
+      "timeframe": "5m"
+    },
+    {
+      "all_of": [
+        {
+          "confirm": "wick",
+          "reference": "opening_range",
+          "side": "low",
+          "type": "range_break"
+        },
+        {
+          "confirm": "close",
+          "reference": "opening_range",
+          "side": "low",
+          "type": "return_inside"
+        }
+      ],
+      "any_of": [],
+      "id": "long",
+      "none_of": [],
+      "side": "long",
+      "timeframe": "5m"
+    }
+  ],
+  "execution": {
+    "bar_close_confirmation": true,
+    "entry_order": "market_on_close_of_signal_bar",
+    "gap_behavior": "fill_at_open",
+    "on_overlapping_signal": "ignore_new",
+    "session_close_behavior": "flatten"
+  },
+  "exits": [],
+  "filters": {
+    "blackout_events": [],
+    "days_of_week": [],
+    "max_trades_per_day": 2,
+    "time_windows": [
+      {
+        "end": "15:00",
+        "start": "09:30",
+        "tz": "America/Chicago"
+      }
+    ]
+  },
+  "instruments": [
+    "MNQ"
+  ],
+  "invalidation": [
+    {
+      "reference": "signal_window",
+      "type": "session_end"
+    }
+  ],
+  "plan_hash": "sha256:c4ecc6669b127a33cc7ce0cbd897cba04801d3882d6429829b99987bcf14d271",
+  "risk": {
+    "max_concurrent_positions": 1,
+    "scale_in": false,
+    "size": {
+      "method": "fixed_contracts",
+      "value": 1.0
+    },
+    "stop": {
+      "type": "points",
+      "value": 25.0
+    },
+    "target": {
+      "type": "points",
+      "value": 50.0
+    }
+  },
+  "session": "rth",
+  "spec_hash": "sha256:229294a0ddd4f58344291bee5eb2aadf0c69d97913ba771449946c335b8c2d84",
+  "spec_id": "chat-capture",
+  "timezone": "America/Chicago"
+}

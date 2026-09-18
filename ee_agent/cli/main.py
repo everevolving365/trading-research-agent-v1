@@ -68,6 +68,23 @@ def cmd_demo(args) -> int:
     return 0
 
 
+def cmd_chat(args) -> int:
+    """Open-ended conversation that can operate the whole agent."""
+    from ee_agent.conversation.agent import run_repl
+
+    print(BANNER.format(version=VERSION))
+    return run_repl(voice=args.voice, provider=args.provider)
+
+
+def cmd_sources(args) -> int:
+    """Search for where to get data for anything the agent has no source for."""
+    from ee_agent.data.discovery import discover_sources
+
+    result = discover_sources(args.query, asset_class=args.asset_class, use_web=not args.offline)
+    print(result.summary())
+    return 0
+
+
 def cmd_capture(args) -> int:
     from ee_agent.capture.interrogation import InterrogationEngine
     from ee_agent.capture.parser import parse
@@ -416,6 +433,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     w = sub.add_parser("wizard", help="first-run setup")
     w.set_defaults(func=cmd_wizard)
+
+    ch = sub.add_parser("chat", help="talk to it about anything; it can run every tool it has")
+    ch.add_argument("--voice", action="store_true", help="speak and listen (optional; loses nothing when off)")
+    ch.add_argument("--provider", help="anthropic | openai | gemini | none (default: whichever key is present)")
+    ch.set_defaults(func=cmd_chat)
+
+    so = sub.add_parser("sources", help="search for where to get data for any asset")
+    so.add_argument("query", help="e.g. '1-minute copper futures history'")
+    so.add_argument("--asset-class", dest="asset_class", help="future | crypto | equity | forex | index | option")
+    so.add_argument("--offline", action="store_true", help="catalogue only, no web search")
+    so.set_defaults(func=cmd_sources)
 
     c = sub.add_parser("capture", help="describe your strategy; I interrogate it until it is unambiguous")
     c.add_argument("--transcript", help="read the description from a file instead of asking")

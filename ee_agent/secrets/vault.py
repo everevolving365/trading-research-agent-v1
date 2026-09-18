@@ -55,6 +55,18 @@ KNOWN_SECRETS: dict[str, tuple[str, str]] = {
     "TOPSTEPX_USERNAME": ("live execution on TopstepX", "https://topstepx.com"),
     "TOPSTEPX_API_KEY": ("live execution on TopstepX", "https://topstepx.com -> API access"),
     "TOPSTEPX_ACCOUNT_ID": ("which TopstepX account to trade", "the TopstepX dashboard"),
+    "BRAVE_SEARCH_API_KEY": (
+        "searching the web for data sources the agent does not already know",
+        "https://brave.com/search/api/",
+    ),
+    "TAVILY_API_KEY": (
+        "alternative web search for data-source discovery",
+        "https://tavily.com",
+    ),
+    "SERPAPI_API_KEY": (
+        "alternative web search for data-source discovery",
+        "https://serpapi.com/manage-api-key",
+    ),
 }
 
 

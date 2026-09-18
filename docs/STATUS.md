@@ -17,7 +17,7 @@ because the remaining part is a runtime input, not a build dependency
 | 1 | Voice in (Whisper, local, free, push to talk) | done | `capture/voice.py::Listener`. Optional dependency; `status()` reports availability and how to install it. |
 | 2 | Voice out (local TTS) | done | `capture/voice.py::Speaker` — macOS `say`, Windows SAPI, `pyttsx3`, espeak. All local, all free. |
 | 3 | Interruptible | done | `Speaker.interrupt()` drops the queue and terminates the current utterance. Speech is queued sentence by sentence so cutting in is immediate. |
-| 4 | Deep conversation on any subject | partial | The agent's own domain logic is complete and model-free. General conversation is delegated to whichever model the client configured; with no key it stays on task rather than pretending. |
+| 4 | Deep conversation on any subject | done | `ee-agent chat`. A tool-using conversation over `ee_agent/conversation/`: the model talks about anything AND drives all 16 tools -- capture, interrogation, data, backtest, compile, parity, Operator, order flow, spend. Any provider, or none: with no key it says exactly what it cannot do and everything else still runs. |
 | 5 | Works perfectly with voice off | done | Voice is a shell. `VoiceShell(enabled=False)` falls through to text and the transcript is still kept. Tested. |
 | 6 | Takes in information extremely in depth | done | `capture/parser.py` handles long, rambling, unordered input. The fixture transcript is deliberately meandering. |
 | 7 | Shows the client data constantly | done | Charts rendered during the visual loop (`capture/visual.py`), with an ASCII fallback so a bare install still *shows* rather than tells. Cache age, quality score and cost printed on every operation. |
@@ -40,7 +40,7 @@ because the remaining part is a runtime input, not a build dependency
 | # | ability | status | where / note |
 |---|---|---|---|
 | 16 | Any asset class | done | Futures, stocks, ETFs, indices, forex, crypto. Options are modelled in the source registry but no option fetcher ships (no free source). |
-| 17 | Web search for new sources | partial | The source registry and resolver are complete. Automated discovery of unknown sources is deliberately not shipped: Section 9 limit 2 says scraping arbitrary sites will not hold, so ingestion plus the registry deliver the capability instead. |
+| 17 | Web search for new sources | done | `ee-agent sources "<what you need>"`. Two layers: a curated 16-vendor catalogue searched offline with no key, plus live web search via Brave/Tavily/SerpAPI when the client has one. Ranks by asset class, resolution, order-flow availability and cost. It finds SOURCES, not scrapers -- Section 9 limit 2 stands, so the handoff is a key or a file the ingestion layer reads. |
 | 18 | Universal ingestion | done | `data/ingest.py` — CSV, TSV, JSON, NDJSON, parquet, Excel, broker exports, pasted text. Schema inferred from 40+ column aliases; epoch/ISO/localised timestamps handled. |
 | 19 | Source registry with capability matrix | done | `data/source_registry.py`, `ee-agent data sources`. Resolver walks the ladder and falls through on failure, reporting each step. |
 | 20 | Data integrity engine | done | Gaps, duplicates, out-of-order, timezone normalisation, DST, splits/dividends, continuous futures stitching (ratio and difference), quality score on every dataset. |
@@ -152,12 +152,16 @@ because the remaining part is a runtime input, not a build dependency
 
 ## Summary
 
-- **done:** 74
-- **partial (built, with a stated limitation):** 6 — abilities 4, 15, 17, 31, 65, and general conversation depth
+- **done:** 76
+- **partial (built, with a stated limitation):** 4 — abilities 15, 31, 65, and option-chain data (no free source exists)
 - **runtime (built and verified in simulation; needs a credential or account to exercise live):** 9 — abilities 25–30, 46, 52, 54
 
 Every `partial` and `runtime` item has a reason and a plan above, and the ones
 needing something from the owner are in `BLOCKERS.md`.
+
+Abilities 4 and 17 were shipped as `partial` in the first pass and the owner
+correctly rejected that: his requirement list names both plainly and says nothing
+on it is optional. Both are now `done` (D-018, D-019).
 
 ## The one-sentence test
 
