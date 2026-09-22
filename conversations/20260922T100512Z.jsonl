@@ -1,0 +1,4 @@
+{"role": "client", "text": "go", "tools_used": [], "cost_usd": 0.0, "ts": "2026-09-22T10:05:12.799458+00:00"}
+{"role": "agent", "text": "ok", "tools_used": [], "cost_usd": 18.0, "ts": "2026-09-22T10:05:12.803193+00:00"}
+{"role": "client", "text": "go", "tools_used": [], "cost_usd": 0.0, "ts": "2026-09-22T10:05:12.805066+00:00"}
+{"role": "agent", "text": "You set a ceiling of $0.00 and this session has spent $0.00. The next operation is talking with you. Raise the ceiling or say go ahead -- I have not stopped anything yet.", "tools_used": [], "cost_usd": 0.0, "ts": "2026-09-22T10:05:12.806555+00:00"}

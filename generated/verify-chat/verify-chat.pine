@@ -1,6 +1,6 @@
 //@version=5
 // Verify Chat -- signal indicator
-// GENERATED from spec verify-chat (sha256:accfe8921283097cb21e2d38f9279ab388ca989c43e3d56aeb49c975a92e0f5a)
+// GENERATED from spec verify-chat (sha256:c5c734db8275e7b4293ea522ca811c84f7cf66588da66452f3e129548a712391)
 // Compiled by ee_agent.compile.to_pine. Do not hand-edit: regenerate from the spec.
 indicator("Verify Chat", overlay=true, max_labels_count=500)
 

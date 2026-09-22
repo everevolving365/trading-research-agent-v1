@@ -1,18 +1,18 @@
 # BUILD LOG
-Last updated: 2026-09-21 (phase 15)
+Last updated: 2026-09-22 (phase 16)
 
 ## CURRENT STATE
-Phase: 15 — Options as an asset class — **acceptance PASSED**
-Status: fifteen phases complete. `make verify` runs 58 acceptance checks on a
-clean clone with zero credentials; `make test` runs 262 tests.
+Phase: 16 — The desktop app — **acceptance PASSED**
+Status: sixteen phases complete. `make verify` runs 62 acceptance checks on a
+clean clone with zero credentials; `make test` runs 285 tests.
 **Every ability on the owner's requirement list is built.** `docs/STATUS.md`
 reports 79 of 83 `done`, 3 `runtime` (need the owner's own account to exercise
 live), and exactly 1 `partial`: ability 65's CPI dates, which needs a refresh
 from the BLS calendar rather than code.
 
-Next action: nothing is blocking. The highest-value next step is not more code
-— it is running the Operator against the real TradingView site once B-001 lands,
-because that is the only part of the system no fixture can validate.
+Next action: nothing is blocking. The highest-value next step is still not more
+code — it is running the Operator against the real TradingView site once B-001
+lands, because that is the only part of the system no fixture can validate.
 
 ## HOW TO RESUME COLD
 Say "continue from BUILD-LOG.md". Then:
@@ -40,14 +40,16 @@ Say "continue from BUILD-LOG.md". Then:
 - [x] Phase 13 — Conversation and source discovery — acceptance PASSED 2026-09-18
 - [x] Phase 14 — Screenshot intake and export portals — acceptance PASSED 2026-09-21
 - [x] Phase 15 — Options as an asset class — acceptance PASSED 2026-09-21
+- [x] Phase 16 — The desktop app — acceptance PASSED 2026-09-22
 
 ## HOW TO CHECK THE BUILD YOURSELF
 
 ```bash
-make verify        # 58 acceptance checks, every phase, zero credentials, ~13 min
-make test          # 262 tests, ~13 min
+make verify        # 62 acceptance checks, every phase, zero credentials, ~13 min
+make test          # 285 tests, ~14 min
+ee-agent app       # THE DESKTOP APP -- start here, no terminal knowledge needed
 ee-agent demo      # a real backtest plus a parity proof, no keys
-ee-agent chat      # talk to it about anything; it drives all 18 tools
+ee-agent chat      # the same conversation in a terminal; 20 tools
 ee-agent sources "1-minute copper futures history"
 ee-agent screenshots my-charts/*.png
 ee-agent portal list
@@ -156,6 +158,15 @@ client entered and not why.
 one generic flow: login, fields, export, download, handoff to ingestion. A
 purchase gate routes into the paywall handler.
 
+**Phase 16** — *The desktop app* (`ee_agent/ui/`, D-024). `ee-agent app` opens a
+window: chat, a live view of what the agent is doing, the running spend, a voice
+toggle and a microphone button. Built on `http.server` from the standard library
+— no Flask, no node, no build step — so it works anywhere the agent already
+runs. Binds to 127.0.0.1 and refuses anything else; every API call carries a
+session token, because this app has the client's keychain behind it. Exposes the
+same 20 tools as `ee-agent chat`, so nothing the client can click reaches the
+order layer.
+
 **Phase 15** — *Options* (`ee_agent/instruments/options.py`,
 `ee_agent/data/options.py`, D-022). An option contract resolves to an ordinary
 `Instrument`, so the whole engine runs it with no asset-class branch. Parsing
@@ -206,6 +217,10 @@ Worth reading, because each was silent and each would have cost money:
 14. **The committed fixtures age.** A request for "the last 60 days" had begun
     falling entirely outside them, which read as "no data exists" rather than
     "your window has moved past the recording".
+15. **There was no way for a non-technical client to use any of it.** Everything
+    worked and it all lived behind a terminal. The owner asked how a client
+    actually talks to the agent; the answer was a CLI, which does not satisfy
+    "extremely user friendly". (D-024)
 
 ## OPEN THREADS
 

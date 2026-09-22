@@ -1,6 +1,6 @@
 //@version=5
 // Verify Chat -- strategy script (Strategy Tester / Deep Backtesting)
-// GENERATED from spec verify-chat (sha256:accfe8921283097cb21e2d38f9279ab388ca989c43e3d56aeb49c975a92e0f5a)
+// GENERATED from spec verify-chat (sha256:c5c734db8275e7b4293ea522ca811c84f7cf66588da66452f3e129548a712391)
 strategy("Verify Chat [strategy]", overlay=true, default_qty_type=strategy.fixed, default_qty_value=1, pyramiding=0, commission_type=strategy.commission.cash_per_contract, commission_value=2.37, slippage=1, calc_on_every_tick=false, process_orders_on_close=true, initial_capital=50000)
 
 // ---- generated context -------------------------------------------------

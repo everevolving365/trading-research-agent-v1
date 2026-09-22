@@ -5,7 +5,7 @@
       "price": "{{close}}",
       "side": "long",
       "signature": "<hmac-sha256 of the fields above, keyed by the client's webhook secret>",
-      "spec_hash": "sha256:1adf8c02ed54f93a96ed70fedf60206b413542ea65c515035c3a014e0d2be116",
+      "spec_hash": "sha256:5847f4f87a36074c2eeaba5ddca00ad589f8bb348e51216a93458f72c8935f5a",
       "spec_id": "chat-capture",
       "symbol": "{{ticker}}",
       "time": "{{timenow}}"
@@ -15,7 +15,7 @@
       "price": "{{close}}",
       "side": "short",
       "signature": "<hmac-sha256 of the fields above, keyed by the client's webhook secret>",
-      "spec_hash": "sha256:1adf8c02ed54f93a96ed70fedf60206b413542ea65c515035c3a014e0d2be116",
+      "spec_hash": "sha256:5847f4f87a36074c2eeaba5ddca00ad589f8bb348e51216a93458f72c8935f5a",
       "spec_id": "chat-capture",
       "symbol": "{{ticker}}",
       "time": "{{timenow}}"
@@ -144,7 +144,7 @@
     }
   },
   "session": "rth",
-  "spec_hash": "sha256:1adf8c02ed54f93a96ed70fedf60206b413542ea65c515035c3a014e0d2be116",
+  "spec_hash": "sha256:5847f4f87a36074c2eeaba5ddca00ad589f8bb348e51216a93458f72c8935f5a",
   "spec_id": "chat-capture",
   "timezone": "America/Chicago"
 }
