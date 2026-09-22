@@ -33,7 +33,7 @@ because the remaining part is a runtime input, not a build dependency
 | 12 | Client's risk rules recorded exactly | done | `Risk` is copied verbatim. The agent never edits it — the portability conversion (D-002) *proposes* and requires approval. |
 | 13 | Ambiguity ledger with sensitivity | done | Every assumption carries `sensitivity.if_wrong`; `measure_sensitivity()` runs the strategy both ways and reports the measured difference. |
 | 14 | Natural language editing | done | `capture/intake.py::edit`, `before_and_after()` regenerates and shows both results side by side. An unrecognised sentence changes nothing and says so. |
-| 15 | Screenshot and fill-history intake | partial | Fill-history reconstruction is complete and measured (`reconstruct_from_fills`). Screenshot intake extracts what is mechanically available and states plainly that reading chart markup needs a vision model — it never guesses at an image it cannot see. |
+| 15 | Screenshot and fill-history intake | done | `ee-agent screenshots <images>`. `capture/vision.py` reads the markup with a vision model (Anthropic/OpenAI/Gemini) and returns levels, arrows, zones and every annotation, then builds a spec proposal in which **every inferred element is an unapproved assumption** — a picture never becomes a rule, because that would be the agent deciding the strategy. With no vision key it extracts symbol/timeframe/date and says plainly that it cannot see the drawing. Fill-history reconstruction is complete and measured (`reconstruct_from_fills`). |
 
 ## C. Research and data
 
@@ -59,7 +59,7 @@ because the remaining part is a runtime input, not a build dependency
 | 28 | Paste strategy, run Strategy Tester | runtime | Same. |
 | 29 | Deep Backtesting, read the report | runtime | Plan detection gates it; a non-Premium account gets the regular backtest and is *told so* rather than being handed a mislabelled number. |
 | 30 | Alerts and webhooks | runtime | Payload carries the spec hash; `LivePlan.verify_alert()` refuses an alert from a stale script. |
-| 31 | Retrieve data from export portals | partial | The Operator can navigate and download; the handoff to ingestion is implemented. Portal-specific selectors need adding per venue, which is configuration, not a rewrite. |
+| 31 | Retrieve data from export portals | done | `ee-agent portal get <id>`. `operator/portals.py` carries five portals as DATA (TradingView export, TopstepX statements, CME DataMine, Databento batch, generic broker) — login, field fill, export, download, then handoff to universal ingestion so the client never states a schema. A purchase gate routes into the paywall handler. Adding a venue is one dict entry. Cannot place an order; a test greps for it. |
 | 32 | Full audit trail | done | Every action logged with a screenshot and timestamp; secrets redacted before writing. |
 | 33 | Human confirmation on public publishing | done | `publish_script()` raises without `confirm=True`. Saving privately needs no confirmation. |
 
@@ -152,8 +152,8 @@ because the remaining part is a runtime input, not a build dependency
 
 ## Summary
 
-- **done:** 76
-- **partial (built, with a stated limitation):** 4 — abilities 15, 31, 65, and option-chain data (no free source exists)
+- **done:** 78
+- **partial (built, with a stated limitation):** 2 — ability 65 (CPI dates approximated, FOMC and NFP exact) and option-chain data (no free source exists)
 - **runtime (built and verified in simulation; needs a credential or account to exercise live):** 9 — abilities 25–30, 46, 52, 54
 
 Every `partial` and `runtime` item has a reason and a plan above, and the ones
@@ -161,7 +161,10 @@ needing something from the owner are in `BLOCKERS.md`.
 
 Abilities 4 and 17 were shipped as `partial` in the first pass and the owner
 correctly rejected that: his requirement list names both plainly and says nothing
-on it is optional. Both are now `done` (D-018, D-019).
+on it is optional. Both are now `done` (D-018, D-019). Abilities 15 and 31
+followed in phase 14 (D-020, D-021), which leaves no `partial` item that any
+amount of code could close — ability 65 needs a data refresh from the BLS, and
+option-chain data has no free source to fetch from.
 
 ## The one-sentence test
 

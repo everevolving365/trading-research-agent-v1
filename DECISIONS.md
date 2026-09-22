@@ -321,3 +321,48 @@ readable without the client describing its schema.
 Reversible: yes.
 Honest limit: the catalogue's prices and coverage will drift. Each entry carries
 a vendor URL and the file says to verify before relying on a number.
+
+---
+
+## D-020 — A screenshot produces questions, never rules
+Date: 2026-09-21
+Context: ability 15 asks the agent to read marked-up screenshots of past trades
+and "infer the rules". Inferring a rule from a picture and then trading it is
+the agent deciding the client's strategy, which hard rule 1 forbids outright.
+Options: (a) read the image and write a spec; (b) read the image and write a
+spec proposal in which everything inferred is an unapproved assumption.
+Chosen: (b). `spec_from_screenshots()` emits one assumption per observation
+class -- levels, arrow directions, annotations, timeframe, risk -- all with
+`approved_by: pending`, which the validator treats as blocking. The first
+assumption is always `screenshot:entry_rule`, whose text says outright that a
+picture shows WHERE the client entered and not WHY.
+Reasoning: a vision model can see that a line was drawn at 20125.25. It cannot
+know whether that is a session range, a prior high or a round number the client
+happens to like, and guessing puts a rule in the client's strategy that they
+never stated.
+Reversible: yes, but doing so would break hard rule 1.
+Honest limit: the extraction prompt forbids inferring a strategy, and a test
+asserts that wording is present. A model can still misread a chart -- which is
+why `unreadable` is part of the returned shape and gets printed.
+
+---
+
+## D-021 — Portal selectors are data, like the instrument registry
+Date: 2026-09-21
+Context: ability 31 needs data pulled from export portals that have no API. The
+obvious implementation is a function per venue.
+Options: (a) a function per portal; (b) a `PortalSpec` per portal, as data, with
+one generic flow driving all of them.
+Chosen: (b). Five portals ship as dict entries: TradingView export, TopstepX
+statements, CME DataMine, Databento batch, and a generic broker fallback whose
+selectors are the common shapes.
+Reasoning: the same argument as hard rule 5 for instruments. These selectors
+*will* break -- Section 9 limit 1 says so about TradingView and it is true of
+every portal. When one breaks, the fix should be editing a dict entry, not
+debugging a function. It also means adding a venue needs no Python at all.
+Reversible: yes.
+Honest limit: the selector sets are best-effort and unverified against the live
+sites, since three of the five need paid accounts. They are built and tested
+against mock pages that write real files, so the flow, the download wait, the
+paywall branch and the ingestion handoff are all exercised; the selector strings
+themselves are the part that needs correcting on first live contact.

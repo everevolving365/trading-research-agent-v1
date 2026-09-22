@@ -1,6 +1,6 @@
 //@version=5
 // Chat Capture -- strategy script (Strategy Tester / Deep Backtesting)
-// GENERATED from spec chat-capture (sha256:229294a0ddd4f58344291bee5eb2aadf0c69d97913ba771449946c335b8c2d84)
+// GENERATED from spec chat-capture (sha256:1adf8c02ed54f93a96ed70fedf60206b413542ea65c515035c3a014e0d2be116)
 strategy("Chat Capture [strategy]", overlay=true, default_qty_type=strategy.fixed, default_qty_value=1, pyramiding=0, commission_type=strategy.commission.cash_per_contract, commission_value=2.37, slippage=1, calc_on_every_tick=false, process_orders_on_close=true, initial_capital=50000)
 
 // ---- generated context -------------------------------------------------

@@ -1,6 +1,6 @@
 //@version=5
 // Chat Capture -- signal indicator
-// GENERATED from spec chat-capture (sha256:229294a0ddd4f58344291bee5eb2aadf0c69d97913ba771449946c335b8c2d84)
+// GENERATED from spec chat-capture (sha256:1adf8c02ed54f93a96ed70fedf60206b413542ea65c515035c3a014e0d2be116)
 // Compiled by ee_agent.compile.to_pine. Do not hand-edit: regenerate from the spec.
 indicator("Chat Capture", overlay=true, max_labels_count=500)
 

@@ -67,6 +67,22 @@ KNOWN_SECRETS: dict[str, tuple[str, str]] = {
         "alternative web search for data-source discovery",
         "https://serpapi.com/manage-api-key",
     ),
+    "CME_DATAMINE_USERNAME": (
+        "bulk exchange data downloads from CME DataMine",
+        "https://datamine.cmegroup.com",
+    ),
+    "CME_DATAMINE_PASSWORD": (
+        "bulk exchange data downloads from CME DataMine",
+        "https://datamine.cmegroup.com",
+    ),
+    "DATABENTO_USERNAME": (
+        "Databento batch downloads through the web portal (the API uses DATABENTO_API_KEY)",
+        "https://databento.com/portal/login",
+    ),
+    "DATABENTO_PASSWORD": (
+        "Databento batch downloads through the web portal",
+        "https://databento.com/portal/login",
+    ),
 }
 
 

@@ -213,6 +213,64 @@ def find_data_sources(query: str, asset_class: str = "") -> dict:
 
 
 @tool(
+    "read_screenshots",
+    "Read marked-up chart screenshots the client uploaded and report what is actually drawn on "
+    "them. Returns observations plus the questions to ask -- it never turns a picture into a rule.",
+    _schema(
+        paths={"type": "array", "items": {"type": "string"}, "description": "Image file paths.", "_required": True},
+    ),
+    reads_only=False,
+)
+def read_screenshots(paths: list[str]) -> dict:
+    from ee_agent.capture.vision import read_charts, questions_for, spec_from_screenshots
+
+    intake = read_charts(paths)
+    payload = intake.to_dict()
+    payload["questions_to_ask"] = questions_for(intake)
+    payload["note"] = (
+        "These are OBSERVATIONS, not a strategy. Ask the client every question above before "
+        "anything becomes a rule -- they own the strategy, not the screenshot."
+    )
+    if intake.seen:
+        WORKSPACE.spec = spec_from_screenshots(intake)
+        payload["spec_id"] = WORKSPACE.spec.id
+    return payload
+
+
+@tool(
+    "retrieve_from_portal",
+    "Log into an export portal or broker statement page, download the file and hand it to "
+    "ingestion. Use `list` to see which portals are known. Reads and downloads only.",
+    _schema(
+        portal={"type": "string", "description": "Portal id, or 'list' to see them all.", "_required": True},
+        symbol={"type": "string", "description": "Symbol filter, where the portal has one."},
+        start={"type": "string", "description": "Start date, YYYY-MM-DD."},
+        end={"type": "string", "description": "End date, YYYY-MM-DD."},
+        live={"type": "boolean", "description": "True for a real browser, False for the mock pages."},
+    ),
+    reads_only=False,
+)
+def retrieve_from_portal(
+    portal: str, symbol: str = "", start: str = "", end: str = "", live: bool = False
+) -> dict:
+    from ee_agent.operator.browser import AuditTrail, PlaywrightDriver
+    from ee_agent.operator.portals import PORTALS, PortalOperator, catalogue
+    from ee_agent.paths import REPO_ROOT, ee_home
+
+    if portal in ("list", ""):
+        return {"catalogue": catalogue(), "portals": sorted(PORTALS)}
+    if live:
+        driver = PlaywrightDriver(headless=False)
+    else:
+        from tests.portal_driver import MockPortalDriver
+
+        driver = MockPortalDriver(REPO_ROOT / "tests/fixtures/portals", ee_home() / "downloads")
+    operator = PortalOperator(driver, AuditTrail())
+    result = operator.retrieve(portal, symbol=symbol, start=start, end=end)
+    return result.to_dict()
+
+
+@tool(
     "load_data",
     "Load candle data for any symbol on any asset class. Reports the source it came from, the "
     "cache age, the last bar and a data quality score.",

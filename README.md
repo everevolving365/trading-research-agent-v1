@@ -100,6 +100,8 @@ at strategy, account and global level.
 ee-agent chat                               # talk to it about anything; it runs every tool it has
 ee-agent capture                            # describe your strategy; it interrogates you
 ee-agent sources "<what data you need>"     # find where to get data for any asset
+ee-agent screenshots <images>               # read your marked-up charts and infer the rules
+ee-agent portal get <id>                    # pull data from an export portal or statement
 ee-agent compile <spec>                     # -> Python, Pine indicator, Pine strategy, live config
 ee-agent analyze <spec> --tearsheet         # the truth engine, plus the case against the result
 ee-agent parity <spec>                      # prove all four targets are the same strategy
@@ -197,7 +199,10 @@ set your own ceiling. If you set one and it is reached, the agent tells you and
    flow layer degrades to bar-derived proxies and *says so on every call*.
 4. **Prop firm rules do not apply to spot crypto or equities.** The rule-pack
    layer is optional per instrument, driven by the registry.
-5. **Some strategies cannot be expressed exactly in Pine.** Where that happens
+5. **Portal and TradingView selectors will break.** Every one of them is a dict
+   entry (`PORTALS`, `SELECTORS`) rather than code, precisely because a layout
+   change should be a one-line fix and not a debugging session.
+6. **Some strategies cannot be expressed exactly in Pine.** Where that happens
    the agent states precisely what differs and by how much
    (`pine_limitations()`), rather than shipping a silent approximation.
 

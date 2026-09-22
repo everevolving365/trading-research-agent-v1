@@ -949,6 +949,143 @@ def _phase13_cost() -> str:
     return "unbounded spend proceeds; a client-set ceiling asks and says nothing was stopped"
 
 
+# ------------------------------------------- phase 14 (screenshots + portals)
+@check(14, "screenshot intake reads the markup", "a marked-up chart is read and turned into questions, never into rules", simulated="with a scripted vision reader, so no API key is needed")
+def _phase14_vision() -> str:
+    from ee_agent.capture import vision
+    from ee_agent.spec.validator import validate
+    from tests.test_vision_and_portals import _CHART_PAYLOAD, FakeVisionReader
+
+    import tempfile
+
+    directory = Path(tempfile.mkdtemp())
+    image = directory / "MNQ_5m_2026-03-02.png"
+    image.write_bytes(b"\x89PNG\r\n\x1a\n" + b"0" * 64)
+
+    intake = vision.read_charts([image], reader=FakeVisionReader(_CHART_PAYLOAD))
+    assert len(intake.seen) == 1, "the vision reader was not used"
+    observation = intake.observations[0]
+    assert observation.horizontal_levels and observation.arrows
+    assert observation.text_annotations
+
+    spec = vision.spec_from_screenshots(intake)
+    assert spec.assumptions, "read an image and proposed nothing to confirm"
+    assert all(not a.approved for a in spec.assumptions), "an image-derived guess was pre-approved"
+    assert not validate(spec).live_ready, "a screenshot-derived spec was declared live-ready"
+    ids = {a.id for a in spec.assumptions}
+    assert "screenshot:entry_rule" in ids, "did not ask WHY, only where"
+    return (
+        f"read {len(observation.horizontal_levels)} level(s), {len(observation.arrows)} arrow(s), "
+        f"{len(observation.text_annotations)} note(s) -> {len(spec.assumptions)} unapproved question(s)"
+    )
+
+
+@check(14, "no vision model is stated, not faked", "with no vision key it extracts what it can and says it cannot see the drawing")
+def _phase14_vision_no_key() -> str:
+    import tempfile
+
+    import ee_agent.secrets.vault as vault_module
+    from ee_agent.capture import vision
+
+    directory = Path(tempfile.mkdtemp())
+    image = directory / "ES_15m.png"
+    image.write_bytes(b"\x89PNG\r\n\x1a\n" + b"0" * 32)
+
+    previous = vault_module._VAULT
+    saved = {k: os.environ.pop(k, None) for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY")}
+    try:
+        vault_module._VAULT = vault_module.Vault(backends=[vault_module._EnvBackend()])
+        intake = vision.read_charts([image])
+        assert intake.vision_model == "none"
+        assert not intake.seen, "claimed to read an image with no vision model"
+        assert intake.observations[0].symbol == "ES", "did not extract what it could from the filename"
+        assert "not what is drawn" in intake.summary()
+    finally:
+        vault_module._VAULT = previous
+        for key, value in saved.items():
+            if value is not None:
+                os.environ[key] = value
+    return "no-key path extracts symbol and timeframe, and says it cannot see the markup"
+
+
+@check(14, "export portals retrieve and ingest", "the Operator logs in, downloads and hands the file to ingestion", simulated="against mock portal pages that write real files")
+def _phase14_portals() -> str:
+    import tempfile
+
+    from ee_agent.operator.browser import AuditTrail
+    from ee_agent.operator.portals import PORTALS, PortalOperator
+    from tests.portal_driver import MockPortalDriver
+
+    directory = Path(tempfile.mkdtemp())
+    saved = {k: os.environ.get(k) for k in ("TRADINGVIEW_USERNAME", "TRADINGVIEW_PASSWORD")}
+    os.environ["TRADINGVIEW_USERNAME"] = "verify"
+    os.environ["TRADINGVIEW_PASSWORD"] = "verify"
+    try:
+        driver = MockPortalDriver(REPO / "tests/fixtures/portals", directory / "dl", produces="bars")
+        operator = PortalOperator(driver, AuditTrail(root=directory / "audit"), download_dir=directory / "dl")
+        result = operator.retrieve("tradingview_export", symbol="MNQ", start="2026-03-01", end="2026-03-31")
+        assert result.ok, result.errors
+        assert result.ingested_rows > 0, "downloaded a file but ingested nothing"
+        assert result.kind == "OHLCV bars"
+
+        fills_driver = MockPortalDriver(REPO / "tests/fixtures/portals", directory / "dl2", produces="fills")
+        os.environ["TOPSTEPX_USERNAME"] = "verify"
+        os.environ["TOPSTEPX_API_KEY"] = "verify"
+        fills_operator = PortalOperator(
+            fills_driver, AuditTrail(root=directory / "audit2"), download_dir=directory / "dl2"
+        )
+        fills_result = fills_operator.retrieve("topstepx_statements")
+        assert fills_result.ok, fills_result.errors
+        assert fills_result.kind == "broker fill history"
+    finally:
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+    return (
+        f"{len(PORTALS)} portal(s) known; bar export ingested {result.ingested_rows:,} rows, "
+        f"fill export recognised {fills_result.ingested_rows:,} fills"
+    )
+
+
+@check(14, "a portal paywall reaches the client", "a purchase-gated download is brought to the client rather than failing quietly")
+def _phase14_portal_paywall() -> str:
+    import tempfile
+
+    from ee_agent.operator.browser import AuditTrail
+    from ee_agent.operator.portals import PortalOperator
+    from tests.portal_driver import MockPortalDriver
+
+    directory = Path(tempfile.mkdtemp())
+    os.environ["CME_DATAMINE_USERNAME"] = "verify"
+    os.environ["CME_DATAMINE_PASSWORD"] = "verify"
+    driver = MockPortalDriver(REPO / "tests/fixtures/portals", directory / "dl", page="paywalled.html")
+    operator = PortalOperator(driver, AuditTrail(root=directory / "audit"), download_dir=directory / "dl")
+    result = operator.retrieve("cme_datamine", symbol="MNQ")
+    assert result.paywalled, "a purchase gate was not reported as a paywall"
+    assert "datamine.cmegroup.com" in result.paywall_message, "did not bring the page to the client"
+    assert not result.ok
+    return "purchase gate detected, page and cost brought to the client, work not silently abandoned"
+
+
+@check(14, "portals cannot place an order", "the portal module contains no order-placement path")
+def _phase14_portals_no_orders() -> str:
+    import re as _re
+
+    from ee_agent.operator.portals import PORTALS
+
+    source = (REPO / "ee_agent/operator/portals.py").read_text(encoding="utf-8")
+    assert "OrderIntent" not in source and "execution.router" not in source
+    order_call = _re.compile(r"\b(?:place_order|submit_order|send_order|strategy\.entry)")
+    for line in source.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#") or stripped.startswith('"'):
+            continue
+        assert not order_call.search(line), f"portals.py has an order call: {stripped[:60]}"
+    return f"{len(PORTALS)} portals, none with an order-placement path"
+
+
 # ----------------------------------------------------------------- runner
 def run_all(quick: bool = False, phases: list[int] | None = None) -> int:
     from ee_agent.cost.notifier import CostLedger, set_ledger

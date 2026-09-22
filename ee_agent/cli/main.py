@@ -85,6 +85,55 @@ def cmd_sources(args) -> int:
     return 0
 
 
+def cmd_screenshots(args) -> int:
+    """Read marked-up chart screenshots and propose a spec to confirm."""
+    from ee_agent.capture.vision import read_charts, spec_from_screenshots
+
+    intake = read_charts(args.paths)
+    print(intake.summary())
+    if not intake.seen:
+        return 0
+    spec = spec_from_screenshots(intake, strategy_id=args.id)
+    print()
+    print("[proposal] every item below is UNAPPROVED until you confirm it:")
+    for assumption in spec.assumptions:
+        print(f"    [{assumption.id}] {assumption.question}")
+        print(f"        I saw: {assumption.resolution}")
+        if assumption.sensitivity.get("if_wrong"):
+            print(f"        if wrong: {assumption.sensitivity['if_wrong']}")
+    if args.out:
+        spec.save(args.out)
+        print()
+        print(f"[saved] {args.out} -- blocked from live trading until the assumptions are approved.")
+    return 0
+
+
+def cmd_portal(args) -> int:
+    """Drive an export portal and hand what comes back to ingestion."""
+    from pathlib import Path as _Path
+
+    from ee_agent.operator.browser import AuditTrail, MockPageDriver, PlaywrightDriver
+    from ee_agent.operator.portals import PortalOperator, catalogue
+
+    if args.action == "list":
+        print(catalogue())
+        return 0
+    if args.live:
+        driver = PlaywrightDriver(headless=args.headless)
+    else:
+        root = _Path(__file__).resolve().parents[2] / "tests/fixtures/portals"
+        print(f"[portal] running against the local mock pages at {root} (no network, no account).")
+        from tests.portal_driver import MockPortalDriver
+
+        from ee_agent.paths import ee_home
+
+        driver = MockPortalDriver(root, ee_home() / "downloads")
+    operator = PortalOperator(driver, AuditTrail())
+    result = operator.retrieve(args.portal, symbol=args.symbol or "", start=args.start or "", end=args.end or "")
+    print(result.summary())
+    return 0 if result.ok else 1
+
+
 def cmd_capture(args) -> int:
     from ee_agent.capture.interrogation import InterrogationEngine
     from ee_agent.capture.parser import parse
@@ -438,6 +487,22 @@ def build_parser() -> argparse.ArgumentParser:
     ch.add_argument("--voice", action="store_true", help="speak and listen (optional; loses nothing when off)")
     ch.add_argument("--provider", help="anthropic | openai | gemini | none (default: whichever key is present)")
     ch.set_defaults(func=cmd_chat)
+
+    sh = sub.add_parser("screenshots", help="read marked-up chart screenshots and infer the rules")
+    sh.add_argument("paths", nargs="+", help="image files")
+    sh.add_argument("--id", default="from-screenshots-v1")
+    sh.add_argument("--out", help="write the spec proposal here")
+    sh.set_defaults(func=cmd_screenshots)
+
+    po = sub.add_parser("portal", help="retrieve data from an export portal or statement download")
+    po.add_argument("action", choices=["list", "get"])
+    po.add_argument("portal", nargs="?", default="", help="portal id, see `ee-agent portal list`")
+    po.add_argument("--symbol")
+    po.add_argument("--start")
+    po.add_argument("--end")
+    po.add_argument("--live", action="store_true", help="real browser instead of the mock pages")
+    po.add_argument("--headless", action="store_true")
+    po.set_defaults(func=cmd_portal)
 
     so = sub.add_parser("sources", help="search for where to get data for any asset")
     so.add_argument("query", help="e.g. '1-minute copper futures history'")
