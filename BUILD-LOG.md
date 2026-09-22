@@ -1,14 +1,14 @@
 # BUILD LOG
-Last updated: 2026-09-21
+Last updated: 2026-09-21 (phase 15)
 
 ## CURRENT STATE
-Phase: 14 — Screenshot intake and export portals — **acceptance PASSED**
-Status: fourteen phases complete. `make verify` runs 51 acceptance checks on a
-clean clone with zero credentials; `make test` runs 219 tests.
+Phase: 15 — Options as an asset class — **acceptance PASSED**
+Status: fifteen phases complete. `make verify` runs 58 acceptance checks on a
+clean clone with zero credentials; `make test` runs 262 tests.
 **Every ability on the owner's requirement list is built.** `docs/STATUS.md`
-reports 78 of 83 `done`, 3 `runtime` (need the owner's own account to exercise
-live), and 2 `partial` that no amount of code can close — ability 65 needs a
-date refresh from the BLS, and option-chain data has no free source to fetch.
+reports 79 of 83 `done`, 3 `runtime` (need the owner's own account to exercise
+live), and exactly 1 `partial`: ability 65's CPI dates, which needs a refresh
+from the BLS calendar rather than code.
 
 Next action: nothing is blocking. The highest-value next step is not more code
 — it is running the Operator against the real TradingView site once B-001 lands,
@@ -39,17 +39,19 @@ Say "continue from BUILD-LOG.md". Then:
 - [x] Phase 12 — Completeness sweep — acceptance PASSED 2026-09-17
 - [x] Phase 13 — Conversation and source discovery — acceptance PASSED 2026-09-18
 - [x] Phase 14 — Screenshot intake and export portals — acceptance PASSED 2026-09-21
+- [x] Phase 15 — Options as an asset class — acceptance PASSED 2026-09-21
 
 ## HOW TO CHECK THE BUILD YOURSELF
 
 ```bash
-make verify        # 51 acceptance checks, every phase, zero credentials, ~11 min
-make test          # 219 tests, ~12 min
+make verify        # 58 acceptance checks, every phase, zero credentials, ~13 min
+make test          # 262 tests, ~13 min
 ee-agent demo      # a real backtest plus a parity proof, no keys
 ee-agent chat      # talk to it about anything; it drives all 18 tools
 ee-agent sources "1-minute copper futures history"
 ee-agent screenshots my-charts/*.png
 ee-agent portal list
+ee-agent options chain SPY --delta 0.25 --tradeable
 ```
 
 The single most important line of output:
@@ -154,6 +156,16 @@ client entered and not why.
 one generic flow: login, fields, export, download, handoff to ingestion. A
 purchase gate routes into the paywall handler.
 
+**Phase 15** — *Options* (`ee_agent/instruments/options.py`,
+`ee_agent/data/options.py`, D-022). An option contract resolves to an ordinary
+`Instrument`, so the whole engine runs it with no asset-class branch. Parsing
+accepts OCC, prefixed and plain-English forms; Black-Scholes greeks are verified
+against put-call parity; chains come from yfinance, Polygon or a synthetic
+offline surface, with at-the-money and by-delta selection and a liquidity filter.
+An option carries its underlying's correlation group, so a long SPY call against
+a short ES future is caught as a hedge. Single-contract candles are repriced from
+the underlying when no vendor history exists, and labelled as modelled.
+
 ## BUGS THE BUILD'S OWN CHECKS CAUGHT
 
 Worth reading, because each was silent and each would have cost money:
@@ -183,6 +195,17 @@ Worth reading, because each was silent and each would have cost money:
     the cost ledger is a process global.
 11. **The vision cost charge sat inside the provider's `read()`**, so a
     substituted reader was silently unmetered. Moved to the orchestrator.
+12. **The Python EMA seeded from `values[0]`; Pine's `ta.ema` seeds from an SMA
+    of the first `length` bars.** The difference decays but never vanishes, and
+    it moved a cross by two bars. Undetected until the first spec that used a
+    moving average — and it is the reason parity interprets the emitted Pine
+    instead of comparing the IR to itself. (D-023)
+13. **The chain generator produced duplicate expiries**, so the same contract
+    appeared twice with different open interest. A client picking "the 560 call"
+    would have seen two of them.
+14. **The committed fixtures age.** A request for "the last 60 days" had begun
+    falling entirely outside them, which read as "no data exists" rather than
+    "your window has moved past the recording".
 
 ## OPEN THREADS
 
@@ -201,5 +224,6 @@ Ordered by value:
 - **Add a fetcher for whichever vendor the client picks** from `ee-agent
   sources`. The interface is `Fetcher` in `ee_agent/data/sources.py`; each one
   is about 40 lines.
-- **Option-chain data** has no free source. If the client buys one, the source
-  registry already models the asset class.
+- **Option chains** currently come from yfinance (free) or Polygon (keyed). If
+  the client wants tick-level option data, Databento and Tardis are in the
+  source catalogue and each needs about 40 lines of fetcher.
