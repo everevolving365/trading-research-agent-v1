@@ -24,6 +24,13 @@ defaults:
     session: 24h
     timezone: America/New_York
     holiday_calendar: fx
+  option:
+    session: rth
+    timezone: America/New_York
+    holiday_calendar: nyse
+    # Contract facts come from ee_agent/instruments/options.py, which resolves an
+    # OCC symbol to an ordinary Instrument. Nothing downstream branches on
+    # "option" -- hard rule 5 holds for options too.
 
 instruments:
   MNQ:
@@ -243,11 +250,16 @@ instruments:
 # correlated groups with opposing exposure is a hedge even when the symbols
 # differ -- long NQ on one account and short ES on another IS a hedge.
 correlation_matrix:
-  nasdaq:   {sp500: 0.92, nasdaq: 1.0, crypto_major: 0.45, energy: 0.10, fx_eur: -0.05}
-  sp500:    {nasdaq: 0.92, sp500: 1.0, crypto_major: 0.42, energy: 0.15, fx_eur: -0.05}
-  crypto_major: {nasdaq: 0.45, sp500: 0.42, crypto_major: 1.0, energy: 0.05, fx_eur: 0.10}
-  energy:   {nasdaq: 0.10, sp500: 0.15, crypto_major: 0.05, energy: 1.0, fx_eur: 0.05}
-  fx_eur:   {nasdaq: -0.05, sp500: -0.05, crypto_major: 0.10, energy: 0.05, fx_eur: 1.0}
+  nasdaq:   {sp500: 0.92, nasdaq: 1.0, crypto_major: 0.45, energy: 0.10, fx_eur: -0.05, russell: 0.85, equity_single: 0.55}
+  sp500:    {nasdaq: 0.92, sp500: 1.0, crypto_major: 0.42, energy: 0.15, fx_eur: -0.05, russell: 0.88, equity_single: 0.55}
+  crypto_major: {nasdaq: 0.45, sp500: 0.42, crypto_major: 1.0, energy: 0.05, fx_eur: 0.10, russell: 0.40, equity_single: 0.30}
+  energy:   {nasdaq: 0.10, sp500: 0.15, crypto_major: 0.05, energy: 1.0, fx_eur: 0.05, russell: 0.15, equity_single: 0.10}
+  fx_eur:   {nasdaq: -0.05, sp500: -0.05, crypto_major: 0.10, energy: 0.05, fx_eur: 1.0, russell: -0.05, equity_single: -0.05}
+  # An option on SPY carries its UNDERLYING's correlation group, so a long SPY
+  # call on one account and a short ES future on another is seen as the hedge it
+  # is (hard rule 3).
+  russell:  {nasdaq: 0.85, sp500: 0.88, crypto_major: 0.40, energy: 0.15, fx_eur: -0.05, russell: 1.0, equity_single: 0.55}
+  equity_single: {nasdaq: 0.55, sp500: 0.55, crypto_major: 0.30, energy: 0.10, fx_eur: -0.05, russell: 0.55, equity_single: 1.0}
 
 # Above this absolute correlation, opposing exposure across accounts is refused.
 hedge_correlation_threshold: 0.60

@@ -201,16 +201,24 @@ def _pine_session(start: str, end: str) -> str:
 
 
 def _ema(values: np.ndarray, length: int) -> np.ndarray:
+    """EMA seeded the way Pine seeds it.
+
+    Pine's ``ta.ema`` seeds with a simple average of the first ``length`` bars
+    and only then applies the alpha recursion. Seeding from ``values[0]``
+    instead -- the other common convention -- leaves a residual difference that
+    decays but never vanishes, and it moved a cross by two bars on the first
+    spec that used ma_cross. The parity harness caught it. Anything here that
+    Pine also computes must match Pine exactly, not approximately.
+    """
     out = np.full(len(values), np.nan)
-    if len(values) == 0:
+    if len(values) < length or length < 1:
         return out
     alpha = 2.0 / (length + 1.0)
-    acc = values[0]
-    out[0] = acc
-    for i in range(1, len(values)):
+    acc = float(np.mean(values[:length]))
+    out[length - 1] = acc
+    for i in range(length, len(values)):
         acc = alpha * values[i] + (1 - alpha) * acc
         out[i] = acc
-    out[: length - 1] = np.nan
     return out
 
 

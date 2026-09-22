@@ -366,3 +366,56 @@ sites, since three of the five need paid accounts. They are built and tested
 against mock pages that write real files, so the flow, the download wait, the
 paywall branch and the ingestion handoff are all exercised; the selector strings
 themselves are the part that needs correcting on first live contact.
+
+---
+
+## D-022 — Options resolve to ordinary Instruments
+Date: 2026-09-21
+Context: "Any asset, any asset class. Explicitly not narrowed to one." I had
+options marked done on the strength of the source registry listing the asset
+class, while no option actually loaded, priced or backtested. Free chains exist,
+so "no free source" was not a defensible reason -- it was an omission I had
+stopped looking at. Found by re-reading the owner's list line by line instead of
+trusting my own status file.
+Options: (a) an options subsystem with its own backtester; (b) resolve an option
+contract to an ordinary `Instrument` and let the existing engine run it.
+Chosen: (b). `option_instrument()` turns an OCC symbol into an `Instrument`
+whose `tick_value` is `tick_size * multiplier`, and everything downstream --
+backtester, fill model, cost model, parity harness, position ledger -- runs
+unchanged. What is genuinely option-specific (parsing, greeks, chain selection,
+liquidity) lives in `instruments/options.py` and `data/options.py`, which is the
+same shape as the futures rollover logic.
+Reasoning: (a) would have meant a second engine, and a second engine is a second
+set of bugs plus a second thing the parity harness has to be taught about. Hard
+rule 5 says asset behaviour is data; an option is an instrument with a 100x
+multiplier and an expiry.
+Reversible: yes.
+Two things worth knowing:
+- An option carries its UNDERLYING's correlation group, so a long SPY call on
+  one account and a short ES future on another is caught as the hedge it is.
+- Single-contract candles are repriced from the underlying when no vendor
+  history is available, and both the log line and `Bars.source` say "MODELLED
+  prices, not traded option prices". A result built on them is a result about
+  the underlying's path, not about option liquidity, and saying so is Law One
+  applied somewhere it would have been easy to skip.
+
+---
+
+## D-023 — The Python EMA now seeds the way Pine seeds it
+Date: 2026-09-21
+Context: the option parity test was the first spec in the project to use
+`ma_cross`, and it diverged -- Pine fired the cross two bars before Python. The
+cause was seeding. Pine's `ta.ema` starts from a simple average of the first
+`length` bars; my Python `_ema` started from `values[0]` and walked forward.
+Both are common conventions, the difference decays, and it never vanishes.
+Options: (a) change the Pine interpreter to match Python; (b) change Python to
+match Pine.
+Chosen: (b). Pine is what the client pastes into TradingView, so where the two
+disagree, Pine is the specification and the Python engine has to match it.
+Reasoning: this is exactly the failure Law Two exists to catch, and it sat
+undetected because no spec had used a moving average until now. It is also the
+argument for interpreting the emitted Pine rather than comparing the IR to
+itself: an IR-to-IR check would never have found it.
+Reversible: yes, but the two seeds must agree either way.
+Note: no existing result changes. The Sweep Return spec uses no moving average,
+and the full parity suite still agrees on all five instruments.

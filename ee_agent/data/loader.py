@@ -25,6 +25,10 @@ DEFAULT_PREFERENCE = ["databento", "polygon", "binance", "yfinance", "fixture", 
 
 
 def asset_class_of(symbol: str) -> str:
+    from ee_agent.instruments.options import is_option_symbol
+
+    if is_option_symbol(symbol):
+        return "option"
     reg = registry()
     if reg.has(symbol):
         return reg.get(symbol).asset_class
@@ -55,6 +59,17 @@ def load_bars(
     start = start or (end - timedelta(days=lookback_days))
     days_back = max(1, int((end - start).total_seconds() // 86400))
     aclass = asset_class_of(symbol)
+
+    # Options resolve through their own loader: a contract's candles either come
+    # from a vendor with option history, or are repriced bar by bar from the
+    # underlying. Either way it returns ordinary Bars and nothing downstream
+    # knows the difference (hard rule 5).
+    if aclass == "option":
+        from ee_agent.data.options import load_option_bars
+
+        return load_option_bars(
+            symbol, timeframe, lookback_days=days_back, fixtures_only=fixtures_only, sink=sink
+        )
     reg = registry()
     local_tz = tz or (reg.get(symbol).timezone if reg.has(symbol) else "America/Chicago")
 

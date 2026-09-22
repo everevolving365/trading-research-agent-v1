@@ -271,6 +271,81 @@ def retrieve_from_portal(
 
 
 @tool(
+    "option_chain",
+    "Load an option chain for any underlying: strikes, expiries, bid/ask, open interest and "
+    "greeks. Use `by_delta` reasoning to pick a contract the way a trader would, and tell the "
+    "client which contracts are actually tradeable.",
+    _schema(
+        underlying={"type": "string", "description": "e.g. SPY, SPX, AAPL.", "_required": True},
+        expiries={"type": "integer", "description": "How many expiries to pull. Default 3."},
+        delta={"type": "number", "description": "If given, also pick the contract nearest this delta."},
+        right={"type": "string", "description": "call or put. Default call."},
+        tradeable_only={"type": "boolean", "description": "Drop illiquid contracts."},
+        fixtures_only={"type": "boolean", "description": "Offline synthetic chain, no key needed."},
+    ),
+    reads_only=False,
+)
+def option_chain(
+    underlying: str,
+    expiries: int = 3,
+    delta: float | None = None,
+    right: str = "call",
+    tradeable_only: bool = False,
+    fixtures_only: bool = False,
+) -> dict:
+    from ee_agent.data.options import load_chain
+
+    chain = load_chain(underlying, expiries=expiries, fixtures_only=fixtures_only, sink=lambda _m: None)
+    if tradeable_only:
+        chain = chain.tradeable_only()
+    payload = chain.to_dict()
+    payload["summary"] = chain.summary()
+    nearest = chain.nearest_expiry()
+    if nearest:
+        payload["nearest_expiry_rows"] = [r.to_dict() for r in chain.for_expiry(nearest)]
+    if delta is not None:
+        row = chain.by_delta(delta, right=right)
+        payload["delta_pick"] = row.to_dict() if row else None
+    payload["note"] = (
+        "Show the client the strikes and say which are tradeable. Do NOT pick a strike or an "
+        "expiry for them -- that is a strategy decision and it is theirs."
+    )
+    return payload
+
+
+@tool(
+    "option_contract",
+    "Look up one option contract: its OCC symbol, multiplier, greeks and how many candles are "
+    "available to backtest it.",
+    _schema(
+        contract={"type": "string", "description": "e.g. 'SPY 580 call 2026-12-18'.", "_required": True},
+        underlying_price={"type": "number", "description": "Spot, for greeks."},
+        volatility={"type": "number", "description": "Volatility for greeks. Default 0.18."},
+    ),
+)
+def option_contract(contract: str, underlying_price: float = 0.0, volatility: float = 0.18) -> dict:
+    from ee_agent.instruments.options import black_scholes, option_instrument, parse_option
+
+    parsed = parse_option(contract)
+    instrument = option_instrument(parsed)
+    payload = {
+        **parsed.to_dict(),
+        "readable": parsed.readable,
+        "tick_value": instrument.tick_value,
+        "settlement": instrument.extra["settlement"],
+        "correlation_group": instrument.correlation_group,
+        "days_to_expiry": parsed.days_to_expiry(),
+        "expired": parsed.is_expired(),
+    }
+    if underlying_price > 0:
+        greeks = black_scholes(parsed, underlying_price, volatility)
+        payload["greeks"] = greeks.to_dict()
+        payload["moneyness"] = round(parsed.moneyness(underlying_price), 4)
+        payload["intrinsic"] = round(parsed.intrinsic(underlying_price), 2)
+    return payload
+
+
+@tool(
     "load_data",
     "Load candle data for any symbol on any asset class. Reports the source it came from, the "
     "cache age, the last bar and a data quality score.",

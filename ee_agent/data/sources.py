@@ -76,7 +76,17 @@ class FixtureFetcher(Fetcher):
                     break
             else:
                 raise DataError(f"No fixture for {symbol} {timeframe}")
-        return bars.between(start, end) if start and end else bars
+        if not (start and end):
+            return bars
+        window = bars.between(start, end)
+        if len(window) == 0:
+            # The committed fixtures age. A request for "the last 60 days" will
+            # eventually fall entirely outside them, and returning nothing would
+            # read as "no data exists" rather than "your window has moved past
+            # the recording". Hand back what the fixture holds -- age_line()
+            # prints exactly how stale it is, so this is never silent.
+            return bars
+        return window
 
 
 class CsvIngestFetcher(Fetcher):

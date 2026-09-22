@@ -1086,6 +1086,181 @@ def _phase14_portals_no_orders() -> str:
     return f"{len(PORTALS)} portals, none with an order-placement path"
 
 
+# --------------------------------------------------------- phase 15 (options)
+@check(15, "options parse in any form", "an option contract is understood however the client writes it")
+def _phase15_option_parsing() -> str:
+    from ee_agent.instruments.options import is_option_symbol, parse_option
+
+    forms = [
+        "SPY241220C00580000",
+        "O:SPY241220C00580000",
+        "SPY 580 call 2024-12-20",
+        "SPY 580C 241220",
+        "AAPL 200 put 20 Dec 24",
+    ]
+    parsed = [parse_option(f) for f in forms]
+    assert all(p.occ.startswith(p.root) for p in parsed)
+    assert parsed[0] == parsed[1] == parsed[2] == parsed[3]
+    for ordinary in ("SPY", "MNQ", "BTCUSDT", "EURUSD", "MNQZ5"):
+        assert not is_option_symbol(ordinary), f"{ordinary} was misread as an option"
+    return f"{len(forms)} input forms all resolve to the same OCC symbol; no ticker misfires"
+
+
+@check(15, "option greeks are correct", "Black-Scholes satisfies put-call parity and inverts to IV")
+def _phase15_greeks() -> str:
+    import math
+
+    from datetime import date as _date
+
+    from ee_agent.instruments.options import black_scholes, implied_volatility, parse_option
+
+    as_of = _date(2026, 9, 21)
+    call = parse_option("SPY 580 call 2026-12-18")
+    put = parse_option("SPY 580 put 2026-12-18")
+    spot, rate, vol = 580.0, 0.04, 0.18
+
+    left = black_scholes(call, spot, vol, as_of, rate).price - black_scholes(put, spot, vol, as_of, rate).price
+    years = (call.expiry - as_of).days / 365.0
+    right = spot - call.strike * math.exp(-rate * years)
+    assert abs(left - right) < 0.01, f"put-call parity violated by {left - right:.4f}"
+
+    greeks = black_scholes(call, spot, vol, as_of, rate)
+    assert greeks.theta < 0, "a long option gained value with time"
+    assert greeks.gamma > 0 and greeks.vega > 0
+    solved = implied_volatility(call, spot, greeks.price, as_of, rate)
+    assert abs(solved - vol) < 1e-3, f"IV round-trip gave {solved}"
+    assert math.isnan(implied_volatility(call, spot, 0.0001, as_of, rate)), (
+        "an impossible price produced a number instead of NaN"
+    )
+    return f"parity holds to {abs(left - right):.5f}; IV round-trips to {solved:.4f}; theta negative"
+
+
+@check(15, "option chain is usable", "a chain has no duplicates, shows a smile, and selects by delta", simulated="on a synthetic chain, so no key is needed")
+def _phase15_chain() -> str:
+    from datetime import date as _date
+
+    from ee_agent.data.options import synthetic_chain
+
+    chain = synthetic_chain("SPY", spot=580.0, as_of=_date(2026, 9, 21))
+    occs = [r.contract.occ for r in chain.rows]
+    assert len(occs) == len(set(occs)), "the chain contains the same contract twice"
+    assert len(chain.expiries) == len(set(chain.expiries)) == 3
+
+    rows = [r for r in chain.for_expiry(chain.expiries[0]) if r.contract.right == "call"]
+    atm = min(rows, key=lambda r: abs(r.contract.strike - 580))
+    wing = max(rows, key=lambda r: abs(r.contract.strike - 580))
+    assert wing.greeks.implied_vol > atm.greeks.implied_vol, "no volatility smile"
+
+    pick = chain.by_delta(0.25, expiry=chain.expiries[0], right="call")
+    assert pick is not None and abs(pick.greeks.delta - 0.25) < 0.12
+    assert pick.contract.strike > 580.0, "a 25-delta call was not out of the money"
+    assert "not real data" in chain.summary(), "a synthetic chain could read as a market quote"
+    return (
+        f"{len(chain.rows)} unique contracts, {len(chain.expiries)} expiries, smile present, "
+        f"25-delta pick at {pick.contract.strike:g} (delta {pick.greeks.delta:.3f})"
+    )
+
+
+@check(15, "an option backtests like any instrument", "the engine runs a strategy on an option contract with no asset-class branch")
+def _phase15_option_backtest() -> str:
+    from ee_agent.data.loader import asset_class_of, load_bars
+    from ee_agent.engine.backtester import Backtester
+    from ee_agent.spec.model import (
+        Condition, Costs, Distance, Execution, Filters, Risk, SignalRule, Signals, Sizing,
+        StrategySpec, Universe,
+    )
+
+    symbol = "SPY261016C00575000"
+    assert asset_class_of(symbol) == "option"
+    bars = load_bars(symbol, "5m", fixtures_only=True, use_cache=False, sink=lambda _m: None).slice(0, 3000)
+    assert len(bars) > 0 and (bars.close > 0).all(), "option premiums must be positive"
+
+    spec = StrategySpec(
+        id="verify-option",
+        name="option ma cross",
+        universe=Universe(instruments=[symbol], timezone="America/New_York"),
+        signals=Signals(
+            entry=[
+                SignalRule(
+                    id="long", side="long", timeframe="5m",
+                    all_of=[Condition("ma_cross", {"fast": 9, "slow": 21, "direction": "up"})],
+                )
+            ]
+        ),
+        filters=Filters(),
+        risk=Risk(stop=Distance("percent", 15.0), target=Distance("percent", 30.0),
+                  size=Sizing("fixed_contracts", 1)),
+        execution=Execution(),
+        costs=Costs(commission_per_side=0.65, slippage_ticks=2.0, spread_ticks=4.0),
+    )
+    result = Backtester(spec).run(bars)
+    assert result.metrics.n_trades > 0, "no trades on an option contract"
+    assert result.costs_total > 0, "an option backtest ran without costs"
+    return f"{result.metrics.n_trades} trades on {symbol}, costs {result.costs_total:,.2f} charged"
+
+
+@check(15, "parity holds on an option", "all four targets agree signal for signal on an option contract")
+def _phase15_option_parity() -> str:
+    from ee_agent.data.loader import load_bars
+    from ee_agent.parity.harness import run_parity
+    from ee_agent.spec.model import (
+        Condition, Costs, Distance, Execution, Filters, Risk, SignalRule, Signals, Sizing,
+        StrategySpec, Universe,
+    )
+
+    symbol = "SPY261016C00575000"
+    bars = load_bars(symbol, "5m", fixtures_only=True, use_cache=False, sink=lambda _m: None).slice(0, 2500)
+    spec = StrategySpec(
+        id="verify-option-parity",
+        name="option parity",
+        universe=Universe(instruments=[symbol], timezone="America/New_York"),
+        signals=Signals(
+            entry=[
+                SignalRule(
+                    id="long", side="long", timeframe="5m",
+                    all_of=[Condition("ma_cross", {"fast": 9, "slow": 21, "direction": "up"})],
+                )
+            ]
+        ),
+        filters=Filters(),
+        risk=Risk(stop=Distance("percent", 15.0), target=Distance("percent", 30.0),
+                  size=Sizing("fixed_contracts", 1)),
+        execution=Execution(),
+        costs=Costs(commission_per_side=0.65, slippage_ticks=2.0, spread_ticks=4.0),
+    )
+    result = run_parity(spec, bars)
+    assert not result.errors, result.errors
+    assert result.agreed, "; ".join(d.explain() for d in result.divergences[:3])
+    return f"all four targets agree on {symbol}: {result.fingerprints[0].short}"
+
+
+@check(15, "an option hedge is refused", "a long call plus a short index future is caught as opposing exposure")
+def _phase15_option_hedge() -> str:
+    from ee_agent.execution.ledger import OrderIntent, PositionLedger
+    from ee_agent.instruments.options import option_instrument
+
+    option_instrument("SPY 580 call 2026-12-18")
+    ledger = PositionLedger(path=None)
+    ledger.apply_fill("acct-A", "SPY261218C00580000", +5, 23.25)
+    check_result = ledger.check(OrderIntent(account="acct-B", symbol="ES", side="sell", size=1))
+    assert not check_result.allowed, "a long SPY call plus a short ES future was allowed"
+    assert check_result.conflicts[0]["symbol"] == "SPY261218C00580000"
+    return "long SPY call on A + short ES on B refused: the option carries the underlying's correlation"
+
+
+@check(15, "modelled option prices are labelled", "repriced premiums are never presented as traded prices")
+def _phase15_option_honesty() -> str:
+    from ee_agent.data.options import load_option_bars
+
+    lines: list[str] = []
+    bars = load_option_bars("SPY261016C00575000", "5m", fixtures_only=True, sink=lines.append)
+    joined = "\n".join(lines)
+    assert "MODELLED prices" in joined, "modelled option prices were not labelled as modelled"
+    assert "not traded option prices" in joined
+    assert "repriced-from" in bars.source, "the Bars source does not say where the prices came from"
+    return "repriced premiums labelled in both the log line and the Bars source"
+
+
 # ----------------------------------------------------------------- runner
 def run_all(quick: bool = False, phases: list[int] | None = None) -> int:
     from ee_agent.cost.notifier import CostLedger, set_ledger

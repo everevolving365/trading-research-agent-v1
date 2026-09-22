@@ -89,7 +89,7 @@ CAPABILITIES: dict[str, SourceCapability] = {
     ),
     "yfinance": SourceCapability(
         name="yfinance",
-        asset_classes=["equity", "index", "crypto"],
+        asset_classes=["equity", "index", "crypto", "option"],
         resolutions=["1m", "5m", "15m", "1h", "1d"],
         history_days=730,
         cost_per_1k_bars_usd=0.0,

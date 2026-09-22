@@ -102,6 +102,7 @@ ee-agent capture                            # describe your strategy; it interro
 ee-agent sources "<what data you need>"     # find where to get data for any asset
 ee-agent screenshots <images>               # read your marked-up charts and infer the rules
 ee-agent portal get <id>                    # pull data from an export portal or statement
+ee-agent options chain SPY --delta 0.25     # option chains, greeks, liquidity, strike selection
 ee-agent compile <spec>                     # -> Python, Pine indicator, Pine strategy, live config
 ee-agent analyze <spec> --tearsheet         # the truth engine, plus the case against the result
 ee-agent parity <spec>                      # prove all four targets are the same strategy

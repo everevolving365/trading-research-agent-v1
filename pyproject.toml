@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ee-agent"
-version = "2.0.0"
+version = "2.2.0"
 description = "A voice-native, deeply autonomous trading agent that proves the strategy you described and the strategy trading your account are the same object."
 readme = "README.md"
 requires-python = ">=3.11"

@@ -39,7 +39,7 @@ because the remaining part is a runtime input, not a build dependency
 
 | # | ability | status | where / note |
 |---|---|---|---|
-| 16 | Any asset class | done | Futures, stocks, ETFs, indices, forex, crypto. Options are modelled in the source registry but no option fetcher ships (no free source). |
+| 16 | Any asset class | done | Futures, stocks, ETFs, indices, forex, crypto **and options**. `ee-agent options chain <underlying>` pulls full chains (yfinance free / Polygon keyed / synthetic offline) with bid/ask, open interest and greeks; `instruments/options.py` resolves an OCC symbol to an ordinary `Instrument`, so the backtester, fill model, parity harness and hedge check all treat a contract like any other instrument -- no asset-class branch anywhere (hard rule 5). Single-contract candles come from a vendor where a key allows, otherwise repriced bar by bar from the underlying and **labelled as modelled**. |
 | 17 | Web search for new sources | done | `ee-agent sources "<what you need>"`. Two layers: a curated 16-vendor catalogue searched offline with no key, plus live web search via Brave/Tavily/SerpAPI when the client has one. Ranks by asset class, resolution, order-flow availability and cost. It finds SOURCES, not scrapers -- Section 9 limit 2 stands, so the handoff is a key or a file the ingestion layer reads. |
 | 18 | Universal ingestion | done | `data/ingest.py` — CSV, TSV, JSON, NDJSON, parquet, Excel, broker exports, pasted text. Schema inferred from 40+ column aliases; epoch/ISO/localised timestamps handled. |
 | 19 | Source registry with capability matrix | done | `data/source_registry.py`, `ee-agent data sources`. Resolver walks the ladder and falls through on failure, reporting each step. |
@@ -152,8 +152,8 @@ because the remaining part is a runtime input, not a build dependency
 
 ## Summary
 
-- **done:** 78
-- **partial (built, with a stated limitation):** 2 — ability 65 (CPI dates approximated, FOMC and NFP exact) and option-chain data (no free source exists)
+- **done:** 79
+- **partial (built, with a stated limitation):** 1 — ability 65 (CPI dates approximated; FOMC and NFP are exact). It needs a data refresh from the BLS, not code.
 - **runtime (built and verified in simulation; needs a credential or account to exercise live):** 9 — abilities 25–30, 46, 52, 54
 
 Every `partial` and `runtime` item has a reason and a plan above, and the ones

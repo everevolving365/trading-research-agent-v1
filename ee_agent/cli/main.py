@@ -13,7 +13,7 @@ from pathlib import Path
 
 
 
-VERSION = "2.0.0"
+VERSION = "2.2.0"
 
 BANNER = r"""
   EverEvolving Trading Agent  v{version}
@@ -83,6 +83,43 @@ def cmd_sources(args) -> int:
     result = discover_sources(args.query, asset_class=args.asset_class, use_web=not args.offline)
     print(result.summary())
     return 0
+
+
+def cmd_options(args) -> int:
+    """Option chains and single-contract candles."""
+    from ee_agent.data.options import load_chain, load_option_bars
+    from ee_agent.instruments.options import option_instrument, parse_option
+
+    if args.action == "chain":
+        chain = load_chain(args.target, expiries=args.expiries, fixtures_only=args.fixtures)
+        if args.tradeable:
+            print()
+            print(chain.tradeable_only().summary(limit=args.limit))
+        if args.delta is not None:
+            row = chain.by_delta(args.delta, right=args.right)
+            if row:
+                print()
+                print(
+                    f"[pick] nearest {args.delta:g}-delta {args.right}: {row.contract.readable} "
+                    f"-- delta {row.greeks.delta:.3f}, bid {row.bid:.2f}, ask {row.ask:.2f}, "
+                    f"OI {row.open_interest:,.0f}, {'tradeable' if row.tradeable else 'NOT tradeable'}"
+                )
+                print(f"       symbol: {row.contract.occ}")
+        return 0
+
+    if args.action == "contract":
+        contract = parse_option(args.target)
+        instrument = option_instrument(contract)
+        print(f"[option] {contract.readable}")
+        print(f"         OCC symbol   {contract.occ}")
+        print(f"         multiplier   {instrument.multiplier:g}  (1 tick = ${instrument.tick_value:.2f})")
+        print(f"         settlement   {instrument.extra['settlement']}")
+        print(f"         correlates   {instrument.correlation_group} (follows the underlying)")
+        print(f"         expires in   {contract.days_to_expiry()} day(s)")
+        bars = load_option_bars(contract, args.timeframe, fixtures_only=args.fixtures)
+        print(f"         {len(bars):,} candle(s) available for backtesting")
+        return 0
+    return 1
 
 
 def cmd_screenshots(args) -> int:
@@ -487,6 +524,18 @@ def build_parser() -> argparse.ArgumentParser:
     ch.add_argument("--voice", action="store_true", help="speak and listen (optional; loses nothing when off)")
     ch.add_argument("--provider", help="anthropic | openai | gemini | none (default: whichever key is present)")
     ch.set_defaults(func=cmd_chat)
+
+    op = sub.add_parser("options", help="option chains, greeks and single-contract candles")
+    op.add_argument("action", choices=["chain", "contract"])
+    op.add_argument("target", help="underlying for a chain (SPY), or a contract (SPY 580 call 2026-12-18)")
+    op.add_argument("--expiries", type=int, default=3)
+    op.add_argument("--limit", type=int, default=10)
+    op.add_argument("--delta", type=float, help="pick the contract nearest this delta")
+    op.add_argument("--right", choices=["call", "put"], default="call")
+    op.add_argument("--tradeable", action="store_true", help="drop illiquid contracts")
+    op.add_argument("--timeframe", default="5m")
+    op.add_argument("--fixtures", action="store_true", help="offline synthetic chain, no key")
+    op.set_defaults(func=cmd_options)
 
     sh = sub.add_parser("screenshots", help="read marked-up chart screenshots and infer the rules")
     sh.add_argument("paths", nargs="+", help="image files")
