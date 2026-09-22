@@ -1,13 +1,18 @@
 # BUILD LOG
-Last updated: 2026-09-18
+Last updated: 2026-09-21
 
 ## CURRENT STATE
-Phase: 13 — Conversation and source discovery — **acceptance PASSED**
-Status: thirteen phases complete. `make verify` runs 46 acceptance checks on a
-clean clone with zero credentials; `make test` runs 197 tests.
-Next action: nothing is blocking. When the owner supplies any item from
-BLOCKERS.md, wire it in — start with B-003 (the two original `.pine` files),
-which is the smallest and unlocks the regression baseline in `docs/STATUS.md`.
+Phase: 14 — Screenshot intake and export portals — **acceptance PASSED**
+Status: fourteen phases complete. `make verify` runs 51 acceptance checks on a
+clean clone with zero credentials; `make test` runs 219 tests.
+**Every ability on the owner's requirement list is built.** `docs/STATUS.md`
+reports 78 of 83 `done`, 3 `runtime` (need the owner's own account to exercise
+live), and 2 `partial` that no amount of code can close — ability 65 needs a
+date refresh from the BLS, and option-chain data has no free source to fetch.
+
+Next action: nothing is blocking. The highest-value next step is not more code
+— it is running the Operator against the real TradingView site once B-001 lands,
+because that is the only part of the system no fixture can validate.
 
 ## HOW TO RESUME COLD
 Say "continue from BUILD-LOG.md". Then:
@@ -15,7 +20,7 @@ Say "continue from BUILD-LOG.md". Then:
 1. The clone lives in the **`repo` subfolder**, not in "Day trader" directly:
    `Desktop/Day trader/repo`
 2. `git pull` — origin/main is always current; every phase is pushed.
-3. `make verify` to confirm the state you inherited (about 13 minutes).
+3. `make verify` to confirm the state you inherited (about 12 minutes).
 4. Read OPEN THREADS at the bottom of this file and pick the top item.
 
 ## PHASE STATUS
@@ -25,7 +30,7 @@ Say "continue from BUILD-LOG.md". Then:
 - [x] Phase 3 — Law One, the truth engine — acceptance PASSED 2026-09-17
 - [x] Phase 4 — Capture — acceptance PASSED 2026-09-17
 - [x] Phase 5 — Law Two, parity — acceptance PASSED 2026-09-17
-- [x] Phase 6 — The Operator — acceptance PASSED 2026-09-17 (against the mock page set; B-001)
+- [x] Phase 6 — The Operator — acceptance PASSED 2026-09-17 (mock page set; B-001)
 - [x] Phase 7 — Law Three, safety — acceptance PASSED 2026-09-17
 - [x] Phase 8 — Live execution — acceptance PASSED 2026-09-17 (replay harness; B-002)
 - [x] Phase 9 — Order flow — acceptance PASSED 2026-09-17
@@ -33,15 +38,18 @@ Say "continue from BUILD-LOG.md". Then:
 - [x] Phase 11 — Moat and polish — acceptance PASSED 2026-09-17
 - [x] Phase 12 — Completeness sweep — acceptance PASSED 2026-09-17
 - [x] Phase 13 — Conversation and source discovery — acceptance PASSED 2026-09-18
+- [x] Phase 14 — Screenshot intake and export portals — acceptance PASSED 2026-09-21
 
 ## HOW TO CHECK THE BUILD YOURSELF
 
 ```bash
-make verify        # 46 acceptance checks, every phase, zero credentials, ~13 min
-make test          # 197 tests, ~12 min
+make verify        # 51 acceptance checks, every phase, zero credentials, ~11 min
+make test          # 219 tests, ~12 min
 ee-agent demo      # a real backtest plus a parity proof, no keys
-ee-agent chat      # talk to it about anything; it drives all 16 tools
-ee-agent sources "1-minute copper futures history"    # find data for anything
+ee-agent chat      # talk to it about anything; it drives all 18 tools
+ee-agent sources "1-minute copper futures history"
+ee-agent screenshots my-charts/*.png
+ee-agent portal list
 ```
 
 The single most important line of output:
@@ -125,20 +133,26 @@ wizard, free-tier demo.
 **Phase 12** — `ee_agent/verify.py`, `docs/STATUS.md`, this file, DECISIONS.md
 and BLOCKERS.md.
 
-**Phase 13** — the two items the owner rejected as `partial`, now `done`:
-
-*Conversation* (`ee_agent/conversation/`, D-018). `ee-agent chat` is a tool-using
-agent, not a chat window — 16 tools covering capture, interrogation, data
-loading and discovery, backtest, compile, parity, the Operator, order flow, the
-library, the research index and spend. Anthropic, OpenAI, Gemini, or none. Two
-guard rails in code rather than in the prompt: no conversational tool can reach
-the order layer (a test greps for it), and `answer_question` refuses a
-non-answer like "whatever you think is best" rather than inventing a risk rule.
-
-*Source discovery* (`ee_agent/data/discovery.py`, D-019). `ee-agent sources`
+**Phase 13** — *Conversation* (`ee_agent/conversation/`, D-018). `ee-agent chat`
+is a tool-using agent, not a chat window — 18 tools covering capture,
+interrogation, data loading and discovery, screenshots, portals, backtest,
+compile, parity, the Operator, order flow, the library, the research index and
+spend. Anthropic, OpenAI, Gemini, or none. Two guard rails in code rather than in
+the prompt: no conversational tool can reach the order layer (a test greps for
+it), and `answer_question` refuses a non-answer like "whatever you think is
+best" rather than inventing a risk rule.
+*Source discovery* (`ee_agent/data/discovery.py`, D-019) — `ee-agent sources`
 searches a curated 16-vendor catalogue offline with no key, plus live web search
-through the client's own Brave/Tavily/SerpAPI key. Ranks by asset class,
-resolution, order-flow availability and cost; ranks scraper-access sources down.
+through the client's own Brave/Tavily/SerpAPI key.
+
+**Phase 14** — *Screenshot intake* (`ee_agent/capture/vision.py`, D-020).
+`ee-agent screenshots` reads the markup with a vision model and returns levels,
+arrows, zones and annotations — then builds a spec proposal in which every
+inferred element is an UNAPPROVED assumption, because a picture shows where the
+client entered and not why.
+*Export portals* (`ee_agent/operator/portals.py`, D-021) — five portals as data,
+one generic flow: login, fields, export, download, handoff to ingestion. A
+purchase gate routes into the paywall handler.
 
 ## BUGS THE BUILD'S OWN CHECKS CAUGHT
 
@@ -167,21 +181,25 @@ Worth reading, because each was silent and each would have cost money:
    Topstep. (D-017)
 10. **A test that set a spend ceiling left it set for every test after it** —
     the cost ledger is a process global.
+11. **The vision cost charge sat inside the provider's `read()`**, so a
+    substituted reader was silently unmetered. Moved to the orchestrator.
 
 ## OPEN THREADS
 
-None blocking. Ordered by value if the owner wants more built:
+Nothing is blocking, and there is no ability left that more code can complete.
+Ordered by value:
 
-- **Ability 15, screenshot intake.** Fill-history reconstruction is complete.
-  Reading the markup drawn on a chart screenshot needs a vision model; the
-  interface is in place (`read_screenshots(paths, model=...)`) and only the
-  provider call is missing.
-- **Ability 31, export portals.** The Operator navigates and downloads and the
-  ingestion handoff works; each venue needs its own selector set, which is
-  configuration in `SELECTORS`, not a rewrite.
-- Wire in the originals from B-003 and report the signal-count delta.
-- Run the Operator against the real TradingView site once B-001 lands; expect
-  selector corrections, which is why they are all in one `SELECTORS` dict.
-- Refresh `research/calendar.json` CPI dates from the BLS schedule (B-007).
-- Add a fetcher for any vendor the client picks from `ee-agent sources`. The
-  interface is `Fetcher` in `ee_agent/data/sources.py`; each one is ~40 lines.
+- **Run the Operator against the real TradingView site** once B-001 lands. This
+  is the only part of the system no fixture can validate. Expect selector
+  corrections — they are all in one `SELECTORS` dict for exactly that reason.
+- **Run the portals against their live sites.** Same argument; `PORTALS` is one
+  dict entry per venue. Three of the five need paid accounts.
+- **Drop the originals from B-003** into `library/sweep-return-v1/original/` and
+  the signal-count delta gets reported in `docs/STATUS.md`.
+- **Refresh `research/calendar.json` CPI dates** from the BLS schedule (B-007).
+  FOMC and NFP are already exact.
+- **Add a fetcher for whichever vendor the client picks** from `ee-agent
+  sources`. The interface is `Fetcher` in `ee_agent/data/sources.py`; each one
+  is about 40 lines.
+- **Option-chain data** has no free source. If the client buys one, the source
+  registry already models the asset class.

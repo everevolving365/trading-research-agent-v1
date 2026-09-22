@@ -5,7 +5,7 @@
       "price": "{{close}}",
       "side": "long",
       "signature": "<hmac-sha256 of the fields above, keyed by the client's webhook secret>",
-      "spec_hash": "sha256:e7bb85292640d2eeb264669b3e280350ef525116cd615320d40a0c0516c64010",
+      "spec_hash": "sha256:accfe8921283097cb21e2d38f9279ab388ca989c43e3d56aeb49c975a92e0f5a",
       "spec_id": "verify-chat",
       "symbol": "{{ticker}}",
       "time": "{{timenow}}"
@@ -15,7 +15,7 @@
       "price": "{{close}}",
       "side": "short",
       "signature": "<hmac-sha256 of the fields above, keyed by the client's webhook secret>",
-      "spec_hash": "sha256:e7bb85292640d2eeb264669b3e280350ef525116cd615320d40a0c0516c64010",
+      "spec_hash": "sha256:accfe8921283097cb21e2d38f9279ab388ca989c43e3d56aeb49c975a92e0f5a",
       "spec_id": "verify-chat",
       "symbol": "{{ticker}}",
       "time": "{{timenow}}"
@@ -144,7 +144,7 @@
     }
   },
   "session": "rth",
-  "spec_hash": "sha256:e7bb85292640d2eeb264669b3e280350ef525116cd615320d40a0c0516c64010",
+  "spec_hash": "sha256:accfe8921283097cb21e2d38f9279ab388ca989c43e3d56aeb49c975a92e0f5a",
   "spec_id": "verify-chat",
   "timezone": "America/Chicago"
 }

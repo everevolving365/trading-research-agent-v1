@@ -13,3 +13,6 @@
 {"ts": "2026-09-18T20:09:57.014646+00:00", "scope": "account", "name": "a", "tripped": true, "reason": "daily loss -600.00 breached the 500.00 limit", "tripped_at": "2026-09-18T20:09:57.013732+00:00"}
 {"ts": "2026-09-18T20:09:57.016416+00:00", "scope": "strategy", "name": "s", "tripped": true, "reason": "4 consecutive losses (limit 3)", "tripped_at": "2026-09-18T20:09:57.015602+00:00"}
 {"ts": "2026-09-18T20:09:57.019173+00:00", "scope": "global", "name": "global", "tripped": true, "reason": "order latency 5000ms exceeds 2000ms", "tripped_at": "2026-09-18T20:09:57.016805+00:00"}
+{"ts": "2026-09-22T02:54:16.611647+00:00", "scope": "account", "name": "a", "tripped": true, "reason": "daily loss -600.00 breached the 500.00 limit", "tripped_at": "2026-09-22T02:54:16.610717+00:00"}
+{"ts": "2026-09-22T02:54:16.613564+00:00", "scope": "strategy", "name": "s", "tripped": true, "reason": "4 consecutive losses (limit 3)", "tripped_at": "2026-09-22T02:54:16.612736+00:00"}
+{"ts": "2026-09-22T02:54:16.614815+00:00", "scope": "global", "name": "global", "tripped": true, "reason": "order latency 5000ms exceeds 2000ms", "tripped_at": "2026-09-22T02:54:16.613966+00:00"}
