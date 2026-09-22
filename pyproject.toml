@@ -38,7 +38,7 @@ Issues = "https://github.com/everevolving365/trading-research-agent-v1/issues"
 include = ["ee_agent*"]
 
 [tool.setuptools.package-data]
-ee_agent = ["instruments/*.yaml", "prop/firms/*.yaml", "research/*.json"]
+ee_agent = ["instruments/*.yaml", "prop/firms/*.yaml", "research/*.json", "data/*.json", "ui/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -68,6 +68,14 @@ def cmd_demo(args) -> int:
     return 0
 
 
+def cmd_app(args) -> int:
+    """The desktop app: a real window instead of a terminal."""
+    from ee_agent.ui.server import run
+
+    print(BANNER.format(version=VERSION))
+    return run(host=args.host, port=args.port, open_browser=not args.no_browser)
+
+
 def cmd_chat(args) -> int:
     """Open-ended conversation that can operate the whole agent."""
     from ee_agent.conversation.agent import run_repl
@@ -519,6 +527,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     w = sub.add_parser("wizard", help="first-run setup")
     w.set_defaults(func=cmd_wizard)
+
+    ap = sub.add_parser("app", help="open the desktop app (this is the friendly way in)")
+    ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--host", default="127.0.0.1", help="localhost only, by design")
+    ap.add_argument("--no-browser", action="store_true", dest="no_browser")
+    ap.set_defaults(func=cmd_app)
 
     ch = sub.add_parser("chat", help="talk to it about anything; it can run every tool it has")
     ch.add_argument("--voice", action="store_true", help="speak and listen (optional; loses nothing when off)")

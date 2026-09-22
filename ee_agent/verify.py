@@ -1261,6 +1261,148 @@ def _phase15_option_honesty() -> str:
     return "repriced premiums labelled in both the log line and the Bars source"
 
 
+# ----------------------------------------------------- phase 16 (desktop app)
+def _app_server():
+    """Start the real app on a loopback port and return (base_url, httpd)."""
+    import threading
+
+    from ee_agent.ui import server as ui
+
+    httpd = ui.ThreadingHTTPServer(("127.0.0.1", 0), ui.Handler)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    return f"http://127.0.0.1:{httpd.server_port}", httpd
+
+
+def _app_call(base, path, payload=None, token=None):
+    import json as _json
+    import urllib.error
+    import urllib.request
+
+    from ee_agent.ui import server as ui
+
+    data = _json.dumps(payload).encode() if payload is not None else None
+    request = urllib.request.Request(base + path, data=data, method="POST" if data else "GET")
+    request.add_header("Content-Type", "application/json")
+    if token != "__none__":
+        request.add_header("X-EE-Token", token or ui.TOKEN)
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            body = response.read().decode()
+            return response.status, (_json.loads(body) if body.startswith(("{", "[")) else body)
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode()
+        return exc.code, (_json.loads(body) if body.startswith("{") else body)
+
+
+@check(16, "the desktop app runs", "a client opens a window and talks to the agent, no terminal required")
+def _phase16_app() -> str:
+    from ee_agent.conversation import tools as toolbox
+    from ee_agent.ui import server as ui
+
+    base, httpd = _app_server()
+    try:
+        status, page = _app_call(base, "/", token="__none__")
+        assert status == 200 and "<title>EverEvolving Trading Agent</title>" in page
+        assert ui.TOKEN in page and "{{TOKEN}}" not in page, "the page has no usable session token"
+        assert "You own the strategy and you own the risk" in page
+
+        status, info = _app_call(base, "/api/status")
+        assert status == 200 and info["n_tools"] >= 18
+
+        status, reply = _app_call(base, "/api/chat", {"message": "what can you do?"})
+        assert status == 200 and reply["reply"], "the app returned no reply"
+
+        status, tool = _app_call(
+            base, "/api/tool",
+            {"name": "load_data", "arguments": {"symbol": "MNQ", "fixtures_only": True}},
+        )
+        assert status == 200 and tool["result"]["bars"] > 1000, "a tool did not run through the app"
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        toolbox.reset_workspace()
+    return f"page served, chat answered, tool ran ({tool['result']['bars']:,} bars loaded through the UI)"
+
+
+@check(16, "the app is locked to this machine", "it binds to localhost only and every API call needs a session token")
+def _phase16_app_security() -> str:
+    from ee_agent.ui import server as ui
+
+    try:
+        ui.serve(host="0.0.0.0", open_browser=False)
+        raise AssertionError("the app agreed to bind to a public interface")
+    except ValueError as exc:
+        assert "localhost only" in str(exc)
+
+    base, httpd = _app_server()
+    try:
+        status, _body = _app_call(base, "/api/status", token="__none__")
+        assert status == 403, "the API answered without a token"
+        status, _body = _app_call(base, "/api/status", token="guessed")
+        assert status == 403, "the API accepted a wrong token"
+        status, _body = _app_call(base, "/api/chat", {"message": "hi"}, token="__none__")
+        assert status == 403, "chat accepted an untokened POST"
+        assert len(ui.TOKEN) >= 20
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+    return "public bind refused; unauthenticated GET and POST both refused; token is 24 bytes"
+
+
+@check(16, "the app cannot place an order", "no surface the client can click reaches the order layer")
+def _phase16_app_no_orders() -> str:
+    from ee_agent.conversation import tools as toolbox
+
+    base, httpd = _app_server()
+    try:
+        status, body = _app_call(base, "/api/tools")
+        assert status == 200
+        names = {t["name"] for t in body["tools"]}
+        for forbidden in ("place_order", "submit_order", "send_order", "buy", "sell", "go_live"):
+            assert forbidden not in names, f"the app exposes {forbidden}"
+        assert "order_flow" in names
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        toolbox.reset_workspace()
+    return f"{len(names)} tools exposed to the window, none of which can place an order"
+
+
+@check(16, "the app needs no credentials", "it opens, answers and runs tools with an empty keychain")
+def _phase16_app_zero_key() -> str:
+    import ee_agent.secrets.vault as vault_module
+    from ee_agent.conversation import tools as toolbox
+
+    previous = vault_module._VAULT
+    saved = {
+        k: os.environ.pop(k, None)
+        for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "POLYGON_API_KEY")
+    }
+    base, httpd = _app_server()
+    try:
+        vault_module._VAULT = vault_module.Vault(backends=[vault_module._EnvBackend()])
+        status, info = _app_call(base, "/api/status")
+        assert status == 200
+        assert info["model_ready"] is False, "expected no model in this environment"
+        status, reply = _app_call(base, "/api/chat", {"message": "hello"})
+        assert "no model key" in reply["reply"].lower(), "the no-key path did not explain itself"
+        assert "everything else still works" in reply["reply"].lower()
+        status, tool = _app_call(
+            base, "/api/tool",
+            {"name": "load_data", "arguments": {"symbol": "MNQ", "fixtures_only": True}},
+        )
+        assert tool["result"]["bars"] > 1000, "tools stopped working without a key"
+    finally:
+        vault_module._VAULT = previous
+        for key, value in saved.items():
+            if value is not None:
+                os.environ[key] = value
+        httpd.shutdown()
+        httpd.server_close()
+        toolbox.reset_workspace()
+    return "empty keychain: window opens, chat explains the boundary, tools still run"
+
+
 # ----------------------------------------------------------------- runner
 def run_all(quick: bool = False, phases: list[int] | None = None) -> int:
     from ee_agent.cost.notifier import CostLedger, set_ledger

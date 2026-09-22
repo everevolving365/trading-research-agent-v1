@@ -18,7 +18,7 @@ because the remaining part is a runtime input, not a build dependency
 | 2 | Voice out (local TTS) | done | `capture/voice.py::Speaker` — macOS `say`, Windows SAPI, `pyttsx3`, espeak. All local, all free. |
 | 3 | Interruptible | done | `Speaker.interrupt()` drops the queue and terminates the current utterance. Speech is queued sentence by sentence so cutting in is immediate. |
 | 4 | Deep conversation on any subject | done | `ee-agent chat`. A tool-using conversation over `ee_agent/conversation/`: the model talks about anything AND drives all 16 tools -- capture, interrogation, data, backtest, compile, parity, Operator, order flow, spend. Any provider, or none: with no key it says exactly what it cannot do and everything else still runs. |
-| 5 | Works perfectly with voice off | done | Voice is a shell. `VoiceShell(enabled=False)` falls through to text and the transcript is still kept. Tested. |
+| 5 | Works perfectly with voice off | done | Voice is a shell. `VoiceShell(enabled=False)` falls through to text and the transcript is still kept; the desktop app's mic button is optional and the window works identically without it. Tested. |
 | 6 | Takes in information extremely in depth | done | `capture/parser.py` handles long, rambling, unordered input. The fixture transcript is deliberately meandering. |
 | 7 | Shows the client data constantly | done | Charts rendered during the visual loop (`capture/visual.py`), with an ASCII fallback so a bare install still *shows* rather than tells. Cache age, quality score and cost printed on every operation. |
 
@@ -144,8 +144,8 @@ because the remaining part is a runtime input, not a build dependency
 
 | # | ability | status | where / note |
 |---|---|---|---|
-| 81 | One-command install, wizard, free demo | done | `pip install -e .` then `ee-agent demo` — a real backtest and a parity proof with zero keys. |
-| 82 | User friendly, no loss of capability | done | Sixteen commands, every one working against fixtures. Errors name the missing key and where to get it, then carry on with what they can do. |
+| 81 | One-command install, wizard, free demo | done | `pip install -e .` then `ee-agent app` opens the desktop window, or `ee-agent demo` for a real backtest and parity proof with zero keys. |
+| 82 | User friendly, no loss of capability | done | **`ee-agent app` is a real desktop window** — chat, live activity, running spend, voice toggle, microphone — so a client never has to meet a terminal (D-024). Built on `http.server` from the standard library: no Flask, no node, no build step. Localhost-only with a session token. Twenty-one CLI commands remain for anyone who prefers them, every one working against fixtures. Errors name the missing key and where to get it, then carry on. |
 | 83 | No asset-class special cases | done | All asset behaviour is data in `instruments.yaml`. The same spec runs on MNQ and BTCUSDT through identical code. |
 
 ---

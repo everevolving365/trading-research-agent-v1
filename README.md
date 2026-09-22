@@ -43,11 +43,21 @@ ee-agent demo
 data. **No API key, no network, no cost.** That is deliberate — see the
 zero-cost floor below.
 
-Then talk to it, or describe your strategy directly:
+## Talk to it
 
 ```bash
-ee-agent chat                 # open-ended conversation; it drives the whole agent
-ee-agent chat --voice         # same thing, out loud
+ee-agent app
+```
+
+That opens the **desktop app**: a window with a chat pane, a live view of what
+the agent is doing, your running spend, and a microphone button. It is the
+friendly way in and needs no terminal knowledge beyond that one line.
+
+Prefer a terminal? Everything is there too:
+
+```bash
+ee-agent chat                 # the same conversation, in the shell
+ee-agent chat --voice         # out loud
 ee-agent capture              # straight to the structured intake
 ```
 
@@ -97,7 +107,8 @@ at strategy, account and global level.
 ## What it does
 
 ```bash
-ee-agent chat                               # talk to it about anything; it runs every tool it has
+ee-agent app                                # the desktop app -- start here
+ee-agent chat                               # the same conversation in a terminal
 ee-agent capture                            # describe your strategy; it interrogates you
 ee-agent sources "<what data you need>"     # find where to get data for any asset
 ee-agent screenshots <images>               # read your marked-up charts and infer the rules
@@ -160,7 +171,8 @@ It tells you when your strategy does not work. That is the product.
 | module | what lives there |
 |---|---|
 | `ee_agent/spec/` | schema, validator, versioning, diffing, the primitive registry |
-| `ee_agent/conversation/` | the tool-using chat agent, model clients, the 16 tools |
+| `ee_agent/ui/` | the desktop app: local server and the window itself |
+| `ee_agent/conversation/` | the tool-using chat agent, model clients, the 20 tools |
 | `ee_agent/capture/` | voice, interrogation, visual confirmation, intake, NL editing |
 | `ee_agent/instruments/` | tick size, tick value, sessions, holidays, rollover, correlation |
 | `ee_agent/data/` | source registry, resolver, discovery, integrity engine, ingestion, cache, paywall |

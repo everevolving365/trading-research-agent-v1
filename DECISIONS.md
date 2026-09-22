@@ -419,3 +419,39 @@ itself: an IR-to-IR check would never have found it.
 Reversible: yes, but the two seeds must agree either way.
 Note: no existing result changes. The Sweep Return spec uses no moving average,
 and the full parity suite still agrees on all five instruments.
+
+---
+
+## D-024 — The desktop app is stdlib-only, localhost-only
+Date: 2026-09-22
+Context: "Extremely user friendly, while still being maximally capable." The
+agent had a CLI and nothing else. The owner asked how a client actually talks to
+it and whether there was a desktop interface, and the honest answer was no. A
+terminal is not "extremely user friendly" for a trading client who does not live
+in one, and "any client can download it and run it" is not satisfied by
+`pip install -e .` followed by remembering command names.
+Options: (a) leave it a CLI and document it better; (b) Electron or Tauri;
+(c) a web UI on Flask or FastAPI; (d) a local page served by `http.server` from
+the standard library.
+Chosen: (d). `ee-agent app` starts a loopback server and opens the browser on a
+single page: chat, live view of what the agent is doing, running spend, voice
+toggle and a microphone button.
+Reasoning: (b) means a 150MB download and a build toolchain for a product whose
+whole premise is that a client installs it themselves. (c) adds a dependency to
+a project that deliberately runs its entire engine on numpy, pandas and pyyaml.
+(d) costs nothing: it works on any machine that can already run the agent, and
+the zero-cost floor is untouched -- the window opens, answers and runs tools with
+an empty keychain, which is an acceptance check.
+Reversible: yes; it is an additive package plus one CLI command.
+
+Two things that are not negotiable in this module:
+- **It binds to 127.0.0.1 and refuses anything else**, with an error saying why.
+  This app has the client's keychain and broker adapters behind it.
+- **Every API call carries a session token** minted at startup and embedded in
+  the page. Without it, any web page the client happened to have open could
+  drive their trading agent from the same machine. Both are acceptance checks.
+
+The app exposes exactly the same 20 tools as `ee-agent chat`, which means the
+same guarantee holds: nothing the client can click reaches the order layer.
+Order placement stays behind the position ledger and the autonomy ladder, and a
+test asserts the window exposes no order verb.
