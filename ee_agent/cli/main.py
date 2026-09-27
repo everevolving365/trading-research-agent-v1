@@ -13,7 +13,7 @@ from pathlib import Path
 
 
 
-VERSION = "2.4.0"
+VERSION = "2.5.0"
 
 BANNER = r"""
   EverEvolving Trading Agent  v{version}

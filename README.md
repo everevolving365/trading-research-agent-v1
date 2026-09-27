@@ -41,6 +41,35 @@ for signal. The port is not a lookalike; it is provably the script.
 
 ## Install
 
+It installs like any other program: an icon on your Desktop that opens the
+agent in its own window.
+
+**Windows** -- download the ZIP (green **Code** button, **Download ZIP**), open
+the folder and double-click **`Install.bat`**. Or paste one line into
+PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/everevolving365/trading-research-agent-v1/main/install/windows/bootstrap.ps1 | iex
+```
+
+**Mac** -- double-click **`Install.command`**. **Linux** -- `bash install.sh`.
+
+**Or ask Claude:** "install https://github.com/everevolving365/trading-research-agent-v1
+on my computer". This works in the Claude desktop app or Claude Code, where
+Claude can run commands; `CLAUDE.md` tells it exactly what to do. A plain
+browser chat can't install software, so use the steps above there.
+
+The installer finds or installs Python, builds a private environment in your
+user folder, puts **EverEvolving Trading Agent** on your Desktop and in the
+Start menu (Applications on a Mac), and opens it. It never asks for a password
+or a key. Step by step, with what to click: [INSTALL.md](INSTALL.md).
+
+The first thing to try in the app is the demo: a complete backtest and a parity
+proof on data saved inside the app. **No API key, no network, no cost.** That is
+deliberate -- see the zero-cost floor below.
+
+### For developers
+
 ```bash
 git clone https://github.com/everevolving365/trading-research-agent-v1.git
 cd trading-research-agent-v1
@@ -48,23 +77,16 @@ pip install -e .
 ee-agent demo
 ```
 
-`ee-agent demo` runs a complete backtest and a parity proof on committed fixture
-data. **No API key, no network, no cost.** That is deliberate — see the
-zero-cost floor below.
-
 ## Talk to it
 
-```bash
-ee-agent app
-```
-
-That opens the **desktop app**: a window with a chat pane, a live view of what
-the agent is doing, your running spend, and a microphone button. It is the
-friendly way in and needs no terminal knowledge beyond that one line.
+Double-click the icon. The window has a chat, a microphone button, a live view
+of what the agent is doing and what it has cost. It needs no terminal at all,
+and closing the window closes the app.
 
 Prefer a terminal? Everything is there too:
 
 ```bash
+ee-agent app                  # the same window, started from a terminal
 ee-agent chat                 # the same conversation, in the shell
 ee-agent chat --voice         # out loud
 ee-agent capture              # straight to the structured intake
@@ -72,7 +94,7 @@ ee-agent capture              # straight to the structured intake
 
 `chat` is a tool-using agent, not a chat window. Ask it to pull a year of MNQ and
 backtest your opening-range idea and it loads the data and runs the truth engine,
-then reads you the case against the result. It cannot place an order — order
+then reads you the case against the result. It cannot place an order -- order
 placement lives behind the position ledger and a conversational model does not
 get to reach it.
 

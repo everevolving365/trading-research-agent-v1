@@ -11,7 +11,9 @@ like the CLI.
 
 Security: it binds to 127.0.0.1 only, never a public interface, and every
 request must carry a session token minted at startup. That stops a web page you
-happen to have open from talking to your trading agent.
+happen to have open from talking to your trading agent. The Host header must be
+this machine as well, which closes DNS rebinding: a hostile site that points its
+own name at 127.0.0.1 could otherwise load the page and read the token from it.
 """
 from __future__ import annotations
 
@@ -19,6 +21,7 @@ import json
 import mimetypes
 import secrets
 import threading
+import time
 import webbrowser
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -44,6 +47,10 @@ class AppState:
     lock: threading.Lock = field(default_factory=threading.Lock)
     voice_enabled: bool = False
     speaker: Any = None
+    #: monotonic time of the window's last heartbeat; the desktop launcher stops
+    #: the app when these stop arriving (the window was closed)
+    last_heartbeat: float | None = None
+    quit_requested: bool = False
 
     def ensure(self, provider: str | None = None) -> Conversation:
         if self.conversation is None:
@@ -82,6 +89,18 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _local_host(self) -> bool:
+        """The Host header must name this machine. Anything else is a page
+        somewhere on the internet that has pointed its own domain at 127.0.0.1."""
+        host = (self.headers.get("Host") or "").strip().lower()
+        if not host:
+            return False
+        if host.startswith("["):
+            name = host[1:host.find("]")] if "]" in host else host
+        else:
+            name = host.rsplit(":", 1)[0] if ":" in host else host
+        return name in ("127.0.0.1", "localhost", "::1")
+
     def _authorised(self) -> bool:
         """Local-only plus a session token: a page you have open in another tab
         must not be able to drive your trading agent."""
@@ -105,10 +124,15 @@ class Handler(BaseHTTPRequestHandler):
         from urllib.parse import urlparse
 
         path = urlparse(self.path).path
+        if not self._local_host():
+            return self._send(403, {"error": "this app only answers to this computer"})
         if path in ("/", "/index.html"):
             page = (HERE / "index.html").read_text(encoding="utf-8")
             page = page.replace("{{TOKEN}}", TOKEN)
             return self._send(200, page.encode("utf-8"), "text/html; charset=utf-8")
+
+        if path in ("/icon.png", "/favicon.ico"):
+            return self._send(200, _icon_png(), "image/png")
 
         if path.startswith("/api/"):
             if not self._authorised():
@@ -122,6 +146,8 @@ class Handler(BaseHTTPRequestHandler):
         self._send(404, {"error": "not found"})
 
     def _api_get(self, path: str) -> None:
+        if path == "/api/ping":
+            return self._send(200, {"ok": True, "app": "EverEvolving Trading Agent"})
         if path == "/api/status":
             return self._send(200, _status())
         if path == "/api/activity":
@@ -148,10 +174,19 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         from urllib.parse import urlparse
 
+        if not self._local_host():
+            return self._send(403, {"error": "this app only answers to this computer"})
         if not self._authorised():
             return self._send(403, {"error": "bad or missing session token"})
         path = urlparse(self.path).path
         payload = self._body()
+
+        if path == "/api/heartbeat":
+            STATE.last_heartbeat = time.monotonic()
+            return self._send(200, {"ok": True})
+        if path == "/api/quit":
+            STATE.quit_requested = True
+            return self._send(200, {"ok": True, "note": "closing"})
 
         if path == "/api/chat":
             return self._chat(payload)
@@ -276,6 +311,18 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, {"text": text})
         except Exception as exc:  # pragma: no cover - needs a microphone
             return self._send(200, {"text": "", "error": f"{type(exc).__name__}: {exc}"})
+
+
+_ICON: bytes | None = None
+
+
+def _icon_png() -> bytes:
+    global _ICON
+    if _ICON is None:
+        from ee_agent.ui.icon import png_bytes
+
+        _ICON = png_bytes(64)
+    return _ICON
 
 
 def _status() -> dict:

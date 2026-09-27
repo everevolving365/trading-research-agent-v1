@@ -4,6 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>EverEvolving Trading Agent</title>
+<link rel="icon" href="/icon.png">
 <style>
   :root{
     --bg:#0f1115; --panel:#161922; --panel2:#1d212c; --line:#272c3a;
@@ -293,6 +294,9 @@ function greet() {
 greet();
 refresh();
 setInterval(refresh, 6000);
+// The desktop launcher closes the app a little while after this stops (window closed).
+setInterval(() => api("/api/heartbeat", {}).catch(() => {}), 5000);
+api("/api/heartbeat", {}).catch(() => {});
 $("input").focus();
 </script>
 </body>

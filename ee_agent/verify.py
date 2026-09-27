@@ -1541,6 +1541,129 @@ def _phase17_lookahead() -> str:
     return f"CLEAN at {report.truncation_points} truncation points"
 
 
+# ---------------------------------------------- phase 18 (desktop install)
+@check(18, "one step to a desktop icon", "Install.bat / install.sh build a private environment, an icon on the Desktop and an app entry")
+def _phase18_installers() -> str:
+    import tomllib
+
+    ps1 = (REPO / "install/windows/install.ps1").read_text(encoding="utf-8")
+    for needed in ("USERPROFILE", "WScript.Shell", 'GetFolderPath("Desktop")', "ee-agent-desktop.exe", "ee_agent.ui.icon"):
+        assert needed in ps1, f"the Windows installer does not do: {needed}"
+    for forbidden in ("Read-Host", "Get-Credential", "ConvertTo-SecureString"):
+        assert forbidden not in ps1, f"the installer asks for something it must not: {forbidden}"
+    assert "install\\windows\\install.ps1" in (REPO / "Install.bat").read_text(encoding="utf-8")
+    sh = (REPO / "install.sh").read_text(encoding="utf-8")
+    assert "Info.plist" in sh and ".desktop" in sh, "install.sh does not build the macOS app or the Linux entry"
+    for rel in ("install/windows/install.ps1", "install/windows/uninstall.ps1", "install/windows/bootstrap.ps1",
+                "Install.bat", "install.sh", "Install.command"):
+        assert all(b < 128 for b in (REPO / rel).read_bytes()), f"{rel} is not plain ASCII"
+    project = tomllib.loads((REPO / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    assert project["gui-scripts"]["ee-agent-desktop"] == "ee_agent.desktop:main"
+    notes = (REPO / "CLAUDE.md").read_text(encoding="utf-8")
+    assert "install.ps1" in notes and "bash install.sh" in notes, "CLAUDE.md does not say how to install"
+    return "Windows, macOS and Linux installers; windowed launcher; CLAUDE.md tells Claude exactly what to run"
+
+
+@check(18, "its own window and icon", "the app opens as an app window (no address bar) with a generated icon")
+def _phase18_window() -> str:
+    import struct
+    import tempfile
+
+    from ee_agent.desktop import browser_candidates, window_command
+    from ee_agent.ui.icon import SIZES, ico_bytes, png_bytes
+
+    cmd = window_command("msedge.exe", "http://127.0.0.1:1/?token=t", Path(tempfile.gettempdir()) / "p")
+    assert any(a.startswith("--app=") for a in cmd) and any(a.startswith("--user-data-dir=") for a in cmd)
+    assert browser_candidates("Windows", {"ProgramFiles(x86)": "X", "ProgramFiles": "Y", "LOCALAPPDATA": "Z"})[0].endswith("msedge.exe")
+    assert png_bytes(32)[:8] == b"\x89PNG\r\n\x1a\n"
+    assert struct.unpack("<HHH", ico_bytes()[:6]) == (0, 1, len(SIZES))
+    return f"Edge/Chrome app window with its own profile; icon at {len(SIZES)} sizes"
+
+
+@check(18, "it closes with its window", "no heartbeat from the window means the app stops; quitting stops it too")
+def _phase18_lifetime() -> str:
+    import threading
+
+    from ee_agent.desktop import Watchdog
+    from ee_agent.ui import server as ui
+
+    httpd = ui.serve("127.0.0.1", 0, open_browser=False)
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    try:
+        ui.STATE.last_heartbeat, ui.STATE.quit_requested = None, False
+        now = [0.0]
+        dog = Watchdog(httpd, timeout=25, grace=90, clock=lambda: now[0])
+        assert not dog.should_stop()
+        base = f"http://127.0.0.1:{httpd.server_port}"
+        status, _ = _app_call(base, "/api/heartbeat", {})
+        assert status == 200 and ui.STATE.last_heartbeat is not None
+        now[0] = ui.STATE.last_heartbeat + 10
+        assert not dog.should_stop(), "stopped while the window was alive"
+        now[0] = ui.STATE.last_heartbeat + 26
+        assert dog.should_stop(), "kept running after the window went away"
+        ui.STATE.last_heartbeat = None
+        _app_call(base, "/api/quit", {})
+        assert ui.STATE.quit_requested and Watchdog(httpd).should_stop()
+    finally:
+        ui.STATE.last_heartbeat, ui.STATE.quit_requested = None, False
+        httpd.shutdown()
+        httpd.server_close()
+    return "heartbeat keeps it alive, 25 s of silence or Close stops it"
+
+
+@check(18, "only this computer can reach it", "a foreign Host header is refused before the token is even checked")
+def _phase18_host() -> str:
+    import urllib.error
+    import urllib.request
+
+    from ee_agent.ui import server as ui
+
+    base, httpd = _app_server()
+    try:
+        req = urllib.request.Request(base + "/", headers={"Host": "rebind.example"})
+        try:
+            urllib.request.urlopen(req, timeout=5)
+            raise AssertionError("a page served to a foreign Host would leak the session token")
+        except urllib.error.HTTPError as exc:
+            assert exc.code == 403, exc.code
+        status, _ = _app_call(base, "/api/ping")
+        assert status == 200
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+    return "DNS rebinding closed: foreign Host -> 403; this machine -> 200"
+
+
+@check(18, "your data stays yours", "the app writes to a per-user folder, never into the program, and ships no one's history")
+def _phase18_data() -> str:
+    import os as _os
+    import subprocess
+
+    import ee_agent.paths as paths
+
+    saved = _os.environ.pop("EE_HOME", None)
+    try:
+        home = paths.ee_home()
+    finally:
+        if saved is not None:
+            _os.environ["EE_HOME"] = saved
+    assert home != paths.REPO_ROOT, "the default data folder is the program folder"
+    assert "AppData" not in str(paths.user_data_dir("Windows", {"USERPROFILE": "C:/Users/x"})), (
+        "on Windows the data folder must avoid AppData, which packaged apps redirect"
+    )
+    ignored = (REPO / ".gitignore").read_text(encoding="utf-8")
+    for name in ("/position-ledger.jsonl", "/research-index.jsonl", "/conversations/", "/kill-switches.jsonl"):
+        assert name in ignored, f"{name} is not ignored"
+    try:
+        tracked = subprocess.run(["git", "ls-files"], cwd=REPO, capture_output=True, text=True, timeout=30).stdout
+    except (OSError, subprocess.SubprocessError):
+        tracked = ""
+    leaked = [n for n in ("position-ledger.jsonl", "research-index.jsonl", "cost-ledger.jsonl") if n in tracked.split()]
+    assert not leaked, f"runtime history is committed: {leaked}"
+    return f"data in {home.name}/ under the user's own folder; no runtime history in the repository"
+
+
 # ----------------------------------------------------------------- runner
 def run_all(quick: bool = False, phases: list[int] | None = None) -> int:
     from ee_agent.cost.notifier import CostLedger, set_ledger

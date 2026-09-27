@@ -18,3 +18,28 @@ backtests/
 Thumbs.db
 .idea/
 .vscode/
+
+# Runtime state. Everything the app writes goes to EE_HOME (the per-user data
+# folder by default), never into the repository -- see D-029. These are listed
+# in case EE_HOME is pointed at a clone for development.
+/autonomy.jsonl
+/conversations/
+/cost-ledger.jsonl
+/generated/
+/kill-switches.jsonl
+/overnight/
+/position-ledger.jsonl
+/research-index.jsonl
+/source-discovery.jsonl
+/signal-ledger.jsonl
+/library-offered.json
+/app.json
+/app.log
+/uploads/
+/downloads/
+/window-profile/
+
+# Build metadata from pip install -e
+*.egg-info/
+build/
+dist/

@@ -262,6 +262,10 @@ def retrieve_from_portal(
     if live:
         driver = PlaywrightDriver(headless=False)
     else:
+        import sys
+
+        if str(REPO_ROOT) not in sys.path:  # the mock pages live beside the tests
+            sys.path.insert(0, str(REPO_ROOT))
         from tests.portal_driver import MockPortalDriver
 
         driver = MockPortalDriver(REPO_ROOT / "tests/fixtures/portals", ee_home() / "downloads")
@@ -447,7 +451,7 @@ def backtest(monte_carlo: int = 1000, prop_firm: str = "topstep") -> dict:
     "compile_indicator",
     "Compile the strategy to a TradingView arrow indicator, a Pine strategy script, a live "
     "config and a standalone Python backtest. Returns the Pine source ready to paste.",
-    _schema(out_dir={"type": "string", "description": "Where to write them. Default generated/<id>."}),
+    _schema(out_dir={"type": "string", "description": "Where to write them. Default <data folder>/generated/<id>."}),
     reads_only=False,
 )
 def compile_indicator(out_dir: str = "") -> dict:
@@ -456,8 +460,10 @@ def compile_indicator(out_dir: str = "") -> dict:
 
     if WORKSPACE.spec is None:
         return {"error": "No strategy captured yet."}
+    from ee_agent.paths import ee_home
+
     spec = WORKSPACE.spec
-    destination = Path(out_dir or f"generated/{spec.id}")
+    destination = Path(out_dir) if out_dir else ee_home() / "generated" / spec.id
     destination.mkdir(parents=True, exist_ok=True)
     indicator = compile_to_pine_indicator(spec)
     strategy = compile_to_pine_strategy(spec)

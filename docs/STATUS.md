@@ -144,7 +144,7 @@ because the remaining part is a runtime input, not a build dependency
 
 | # | ability | status | where / note |
 |---|---|---|---|
-| 81 | One-command install, wizard, free demo | done | `pip install -e .` then `ee-agent app` opens the desktop window, or `ee-agent demo` for a real backtest and parity proof with zero keys. |
+| 81 | One-command install, wizard, free demo | done | Double-click `Install.bat` (Windows), `Install.command` (Mac) or `bash install.sh` (Linux), or one PowerShell line with no git: an icon appears on the Desktop and opens the agent in its own app window (D-030). `CLAUDE.md` lets a client simply ask Claude to install it. `ee-agent demo` gives a real backtest and parity proof with zero keys. Tested end to end on Windows 11; the macOS and Linux installers are written but not yet run on those systems. |
 | 82 | User friendly, no loss of capability | done | **`ee-agent app` is a real desktop window** — chat, live activity, running spend, voice toggle, microphone — so a client never has to meet a terminal (D-024). Built on `http.server` from the standard library: no Flask, no node, no build step. Localhost-only with a session token. Twenty-one CLI commands remain for anyone who prefers them, every one working against fixtures. Errors name the missing key and where to get it, then carry on. |
 | 83 | No asset-class special cases | done | All asset behaviour is data in `instruments.yaml`. The same spec runs on MNQ and BTCUSDT through identical code. |
 

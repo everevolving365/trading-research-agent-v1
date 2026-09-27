@@ -568,3 +568,75 @@ Context: two details of the port where the obvious implementation was wrong.
    within 120 points of the level" is 60% of a typical MNQ day and 240% of an ES
    day. `ee-agent spec portable` measures the ATR(14) equivalent and shows it for
    approval, exactly as it does for stops and targets.
+
+---
+
+## D-029 — The app's data lives in a per-user folder, never in the program
+Date: 2026-09-26
+Context: `EE_HOME` defaulted to the repository itself, so every run wrote its
+ledgers into the clone: the position ledger, the research index, conversation
+transcripts, kill-switch events, overnight reports. Verify runs had been
+committing them. Anyone who downloaded the agent inherited the developer's
+test positions and history. For an app a client installs, that is a bug and a
+privacy problem.
+Chosen: `ee_home()` now defaults to `paths.user_data_dir()`:
+`%USERPROFILE%\EverEvolving` on Windows (see D-030 for why not AppData),
+`~/Library/Application Support/EverEvolving` on macOS and
+`$XDG_DATA_HOME/everevolving` on Linux. `EE_HOME` still overrides it. The
+runtime files are removed from git and listed in `.gitignore`, anchored to the
+repository root so the library's own `generated/` folders stay tracked. The
+indicator the app compiles now goes to the data folder as well. An acceptance
+check fails if runtime history is ever committed again.
+Reversible: yes; set `EE_HOME` to anything.
+
+---
+
+## D-030 — An installable desktop app: an app window, a windowed launcher, one-step installers
+Date: 2026-09-26
+Context: The owner wants anyone to be able to give their Claude the GitHub
+link, say "install this", and end up with a desktop app. Until now that meant
+Python, a terminal, `pip install -e .` and `ee-agent app`, which opens a browser
+tab.
+Options: (a) Electron or Tauri; (b) a frozen executable (PyInstaller); (c) the
+existing local server shown in an app-mode browser window, started by a
+windowed launcher, and installed by a script that builds a private
+environment and a real shortcut.
+Chosen: (c).
+- `ee-agent-desktop` is a `gui-scripts` entry point, so it runs with no console
+  window. It opens Edge or Chrome with `--app=` and a profile of its own. That
+  means no address bar or tabs, its own taskbar entry, and the app icon. Edge
+  ships with every Windows 10 and 11 machine. If no Chromium browser exists it
+  falls back to the default browser.
+- A second launch finds the running app (`app.json` plus an authenticated
+  `/api/ping`) and opens another window on it instead of starting a second
+  server.
+- The page sends a heartbeat every 5 seconds. After 25 seconds without one, the
+  app stops by itself, so closing the window really closes the app. A Close
+  button does the same at once.
+- The icon is drawn in code (`ee_agent/ui/icon.py`), so there is no binary in
+  the repository.
+- `Install.bat` / `install/windows/install.ps1`, `install.sh` and
+  `Install.command` for the Mac, plus `bootstrap.ps1` for a one-line install
+  with no git. `CLAUDE.md` tells Claude exactly what to run and never to handle
+  the person's keys.
+Reasoning: (a) means a 150MB runtime and a build toolchain, against D-024.
+(b) produces a large unsigned executable that antivirus tools flag and that
+must be rebuilt for every change. (c) reuses the app that already exists and
+is tested, updates with a `git pull`, and needs nothing but Python, which the
+installer fetches if it is missing.
+Found by running it here: when the installer runs inside a packaged (MSIX) app,
+and the Claude desktop app is one, Windows silently redirects everything
+written under `%LOCALAPPDATA%` into that app's private sandbox. The first
+install on this machine put the environment inside Claude's sandbox, and the
+Desktop icon pointed at a folder nothing else could see. That is exactly the
+"ask Claude to install it" case, so the install and data folder moved to
+`%USERPROFILE%\EverEvolving`, which is never redirected. The installer now
+checks whether its Start menu entry was redirected and says so. The Desktop is
+never redirected.
+Honest limits: tested end to end on Windows 11 here: install, icon, window,
+second launch, closing, quitting. The macOS and Linux installers are written
+and syntax-checked but have not been run on those systems. The app window
+needs Edge, Chrome, Brave or Chromium for the no-address-bar look; without one
+it opens in the default browser.
+Reversible: yes; `install\windows\uninstall.ps1` removes the shortcuts and the
+environment, and keeps the data unless told otherwise.

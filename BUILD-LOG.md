@@ -2,27 +2,23 @@
 Last updated: 2026-09-26 (phase 17)
 
 ## CURRENT STATE
-Phase: 17 — NASH Breaker Block v2 replaces Sweep Return — **acceptance PASSED**
-Status: seventeen phases complete. `make verify` runs 67 acceptance checks on a
-clean clone with zero credentials; `make test` runs 320 tests.
-The founder's library now holds the owner's own TradingView script, NASH Breaker
-Block v2, ported rule for rule and **proven identical to the original script**:
-the unmodified script runs as a fifth parity target (D-025, D-026).
+Phase: 18 — An installable desktop app — **acceptance PASSED**
+Status: eighteen phases complete. `make verify` runs 72 acceptance checks on a
+clean clone with zero credentials; `make test` runs 338 tests.
+Double-clicking `Install.bat` (or asking Claude to install the repo) leaves an
+**EverEvolving Trading Agent** icon on the Desktop that opens the agent in its
+own app window and closes cleanly with it. Installed and exercised end to end on
+this Windows 11 machine: `C:\Users\britn\EverEvolving`, icon on the Desktop.
 
 In progress, owner's request of 2026-09-26:
-- **Phase 18 — a real desktop app.** One double-click (or one sentence to
-  Claude) installs it and leaves an icon on the Desktop that opens the agent in
-  its own window. Written, not yet pushed: `ee_agent/desktop.py` (launcher,
-  single instance, heartbeat shutdown), `ee_agent/ui/icon.py` (icon drawn in
-  code), `install/windows/*.ps1`, `Install.bat`, `install.sh`,
-  `Install.command`, `CLAUDE.md`, `INSTALL.md`. Still to do: heartbeat, ping
-  and quit endpoints plus a Host-header check in `ui/server.py`;
-  `[project.gui-scripts] ee-agent-desktop`; EE_HOME defaulting to the per-user
-  data folder with the runtime logs untracked from git (they were being
-  committed from verify runs); tests; a real install on this machine.
 - **Phase 19 — a UI a five-year-old can use** that still shows every
-  capability: big picture cards, a guided journey, a big talk button, plain
-  words with "show me the details", and a Keys page.
+  capability. Planned: results shown as a traffic light, a headline and a few
+  plain sentences with the details one tap away; the new page (big picture cards
+  for every capability, 5-step "start here" journey, big talk button, keys
+  page, pretend-money practice, small-changes and where-it-works cards), the
+  server endpoints behind it (`/api/keys`, `/api/upload`, journey progress,
+  plain results) and four new tools (`practice_run`, `try_variations`,
+  `where_it_works`, `safety_status`).
 
 Owner decision waiting (B-008): NASH's stop, target, hours, daily cap and
 session-close rule are pending assumptions. The script draws entries only.
@@ -55,7 +51,7 @@ Say "continue from BUILD-LOG.md". Then:
 - [x] Phase 15 — Options as an asset class — acceptance PASSED 2026-09-21
 - [x] Phase 16 — The desktop app — acceptance PASSED 2026-09-22
 - [x] Phase 17 — NASH Breaker Block v2 replaces Sweep Return — acceptance PASSED 2026-09-26
-- [ ] Phase 18 — Installable desktop app (icon, own window) — in progress
+- [x] Phase 18 — Installable desktop app (icon, own window) — acceptance PASSED 2026-09-26
 - [ ] Phase 19 — Child-friendly UI that still shows every capability — not started
 
 ## HOW TO CHECK THE BUILD YOURSELF
@@ -63,7 +59,8 @@ Say "continue from BUILD-LOG.md". Then:
 ```bash
 make verify        # 67 acceptance checks, every phase, zero credentials, ~15 min
 make test          # 320 tests, ~15 min
-ee-agent app       # THE DESKTOP APP -- start here, no terminal knowledge needed
+Install.bat        # THE DESKTOP APP -- double-click; icon on the Desktop, own window
+ee-agent app       # the same window, started from a terminal
 ee-agent demo      # a real backtest plus a parity proof, no keys
 ee-agent chat      # the same conversation in a terminal; 20 tools
 ee-agent sources "1-minute copper futures history"
@@ -204,6 +201,17 @@ entry rules. The capture parser recognises "break of structure with a fair
 value gap" in plain English and asks about anything left unsaid. The exits are
 pending assumptions from the owner's TopstepX bracket (B-008).
 
+**Phase 18** — *An installable desktop app* (D-029, D-030). `Install.bat`
+(or `install.ps1`), `install.sh`, `Install.command` and a no-git
+`bootstrap.ps1` find or install Python, build a private environment, draw the
+icon in code, put **EverEvolving Trading Agent** on the Desktop and in the
+Start menu, and open it. `ee-agent-desktop` is a windowed entry point: Edge or
+Chrome in `--app` mode with its own profile, one copy at a time, a heartbeat
+that stops the app when its window closes, and a Close button. The server now
+refuses any Host header but this machine (DNS rebinding). All app data moved
+to a per-user folder, and the runtime history that had been committed is out
+of the repository for good. `CLAUDE.md` tells Claude how to install it.
+
 **Phase 15** — *Options* (`ee_agent/instruments/options.py`,
 `ee_agent/data/options.py`, D-022). An option contract resolves to an ordinary
 `Instrument`, so the whole engine runs it with no asset-class branch. Parsing
@@ -268,6 +276,13 @@ Worth reading, because each was silent and each would have cost money:
 18. **The original script failed its own checksum on Windows**, because a
     Windows checkout writes CRLF. The checksum is now taken over LF text and
     `.gitattributes` pins line endings. (D-026)
+19. **Installing from inside the Claude desktop app put the program in
+    Claude's sandbox.** Windows redirects AppData writes from packaged apps,
+    so the Desktop icon pointed at a folder no one else could see. Found by
+    installing it for real on this machine. Moved to `%USERPROFILE%`. (D-030)
+20. **Every verify run committed its runtime history** -- positions, research
+    index, transcripts -- because the data folder was the repository. A client
+    would have inherited them. (D-029)
 
 ## OPEN THREADS
 
@@ -279,7 +294,9 @@ Ordered by value:
   corrections — they are all in one `SELECTORS` dict for exactly that reason.
 - **Run the portals against their live sites.** Same argument; `PORTALS` is one
   dict entry per venue. Three of the five need paid accounts.
-- **Finish phase 18 and phase 19** (see CURRENT STATE).
+- **Finish phase 19** (see CURRENT STATE).
+- **Run `install.sh` on a Mac and on Linux.** Written and syntax-checked, not
+  yet run on either.
 - **The owner's answers on NASH's exits (B-008)**, and his own
   `how-i-trade-it.md` in his words.
 - **Refresh `research/calendar.json` CPI dates** from the BLS schedule (B-007).
