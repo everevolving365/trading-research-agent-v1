@@ -18,6 +18,7 @@ from typing import Callable
 
 REPO = Path(__file__).resolve().parent.parent
 FIXTURE_SPEC = REPO / "tests/fixtures/specs/sweep-return-atr.yaml"
+NASH_DIR = REPO / "library/nash-breaker-block-v2"
 
 
 @dataclass
@@ -843,11 +844,15 @@ def _phase11_library() -> str:
 
     entries = loader.entries()
     assert entries, "the library is empty"
-    sweep = loader.get("sweep-return-v1")
-    assert sweep.has_spec, "the Sweep Return entry has no spec"
-    spec = sweep.load_spec()
+    nash = loader.get("nash-breaker-block-v2")
+    assert nash.has_spec, "the NASH Breaker Block entry has no spec"
+    assert nash.original_files, "the NASH entry does not carry the owner's original script"
+    spec = nash.load_spec()
     assert spec.signals.entry, "the library spec has no entry rules"
-    return f"{len(entries)} entry(ies); sweep-return-v1 is a full spec ({spec.short_hash}), not just a script"
+    return (
+        f"{len(entries)} entry(ies); nash-breaker-block-v2 is a full spec ({spec.short_hash}) "
+        "with the owner's original script alongside"
+    )
 
 
 # ----------------------------------------------------- phase 13 (conversation)
@@ -1401,6 +1406,139 @@ def _phase16_app_zero_key() -> str:
         httpd.server_close()
         toolbox.reset_workspace()
     return "empty keychain: window opens, chat explains the boundary, tools still run"
+
+
+# ------------------------------------------------- phase 17 (NASH swap)
+def _nash_spec():
+    from ee_agent.spec.model import StrategySpec
+
+    return StrategySpec.load(NASH_DIR / "spec.yaml")
+
+
+@check(17, "NASH primitives, four targets", "structure break, 15m fair value gaps and the add-ons exist in Python, both Pine targets and live")
+def _phase17_primitives() -> str:
+    from ee_agent.spec import primitives as prim
+    from ee_agent.spec.validator import validate
+
+    wanted = ["structure_break", "htf_fvg", "fvg_fuel", "htf_ema_side", "session_open_levels", "open_level_break"]
+    missing = [w for w in wanted if w not in prim.REGISTRY]
+    assert not missing, f"missing primitives: {missing}"
+    assert not prim.audit_registry(), prim.audit_registry()
+    report = validate(_nash_spec())
+    assert report.ok, str(report)
+    assert not report.live_ready, "the NASH spec reached live-ready with its exits still unconfirmed"
+    return f"{len(wanted)} primitives, all four targets; the spec compiles and is blocked from live until the exits are approved"
+
+
+@check(17, "owner's script is a parity target", "the original NASH script, unmodified, agrees with Python, both Pine targets and live")
+def _phase17_original_parity() -> str:
+    from ee_agent.parity.harness import run_parity
+    from ee_agent.parity.original import original_for
+
+    script = original_for("nash-breaker-block-v2")
+    assert script is not None, "no original script with a manifest"
+    bars = _bars(limit=2000)
+    result = run_parity(_nash_spec(), bars, original=script)
+    assert result.agreed, result.report()
+    targets = [f.target for f in result.fingerprints]
+    assert targets == ["python", "pine_indicator", "pine_strategy", "live", "original"], targets
+    n = len(result.fingerprints[0].signals)
+    assert n > 10, f"only {n} signals: not a meaningful comparison"
+    return f"5 targets identical over {len(bars):,} bars ({n} signals, fingerprint {result.fingerprints[0].short})"
+
+
+@check(17, "the script's switches match", "each optional switch in the original, flipped on, matches the spec with the same rule added")
+def _phase17_switches() -> str:
+    import copy
+
+    import numpy as np
+    import yaml
+
+    from ee_agent.compile.to_python import compile_to_python
+    from ee_agent.data.synthetic import GenSpec, generate
+    from ee_agent.parity import fingerprint as fp
+    from ee_agent.parity.original import original_for
+    from ee_agent.parity.pine_sim import run_pine
+    from ee_agent.spec.model import StrategySpec
+
+    script = original_for("nash-breaker-block-v2")
+    # round-the-clock bars, so the 17:00 and 23:00 anchors actually occur
+    bars = generate(GenSpec("MNQ", "5m", days=5, all_hours=True, seed=11, daily_vol=0.02))
+    raw = yaml.safe_load((NASH_DIR / "spec.yaml").read_text(encoding="utf-8"))
+    with_both = copy.deepcopy(raw)
+    with_both["context"].append({"id": "opens", "type": "session_open_levels", "anchors": ["17:00", "23:00", "08:30"]})
+    for rule in with_both["signals"]["entry"]:
+        rule["all_of"].append({"type": "htf_ema_side", "timeframe": "15", "length": 21})
+        rule["all_of"].append({"type": "open_level_break", "reference": "opens", "confirm": "wick"})
+    wick = copy.deepcopy(raw)
+    for rule in wick["signals"]["entry"]:
+        rule["all_of"][0].update(confirm="wick", pivot_len=2)
+        rule["all_of"][1].update(match_direction=False, must_be_unmitigated=True)
+    cases = [
+        ("both add-ons", with_both, {
+            "ALSO require EMA side (off for now)": True,
+            "ALSO require an open-level break (off for now)": True,
+        }),
+        ("wick, 2-bar pivots, any-direction, unmitigated", wick, {
+            "BOS Break Detection": "Wick/Touch",
+            "Structure Pivot Length (bars each side)": 2,
+            "FVG must match direction (bull FVG for longs)": False,
+            "FVG must still be unmitigated": True,
+        }),
+    ]
+    counts = []
+    for label, spec_dict, inputs in cases:
+        spec = StrategySpec.from_dict(spec_dict)
+        sig = compile_to_python(spec).evaluate(bars)
+        ours = fp.from_arrays("python", bars, sig.long_entry, sig.short_entry)
+        out = run_pine(script.source, bars, [script.long, script.short], inputs=inputs)
+        theirs = fp.from_arrays("original", bars, np.asarray(out[script.long], bool), np.asarray(out[script.short], bool))
+        assert ours.digest == theirs.digest, f"{label}: {fp.compare([ours, theirs], bars=bars)[:3]}"
+        counts.append(f"{label}: {len(ours.signals)}")
+    return "identical to the original with its switches flipped -- " + "; ".join(counts)
+
+
+@check(17, "TradingView pivot and timing rules", "equal highs resolve the TradingView way, and a 15m value never reaches a 5m bar before its close")
+def _phase17_semantics() -> str:
+    import numpy as np
+    import pandas as pd
+
+    from ee_agent.data.bars import Bars
+    from ee_agent.data.htf import htf_view
+    from ee_agent.parity.pine_sim import run_pine
+    from ee_agent.spec import primitives as prim
+
+    # two equal highs at bars 3 and 4: TradingView makes the LATER one the pivot
+    highs = [10, 11, 12, 15, 15, 13, 12, 11, 10, 9]
+    ts = pd.date_range("2026-03-02 14:30", periods=len(highs), freq="5min", tz="UTC")
+    df = pd.DataFrame({"ts": ts, "open": highs, "high": highs, "low": [h - 1 for h in highs],
+                       "close": [h - 0.5 for h in highs], "volume": 1.0})
+    bars = Bars(symbol="MNQ", timeframe="5m", df=df)
+    level, _broke = prim.structure_state(prim.Runtime(bars), "high", 3, "close")
+    first = int(np.flatnonzero(~np.isnan(level))[0])
+    assert first == 7, f"pivot confirmed at bar {first}, expected 7 (the later of two equal highs)"
+    out = run_pine("//@version=6\nph = ta.pivothigh(high, 3, 3)\nx = not na(ph)\n", bars, ["x"])
+    got = [int(i) for i in np.flatnonzero(np.asarray(out["x"], bool))]
+    assert got == [7], f"interpreter pivot at {got}, expected [7]"
+    # the 15m bar 09:00-09:15 reaches the 5m chart on the 09:10 bar, not before
+    full = _bars(limit=600)
+    _htf, kmap = htf_view(full, "15")
+    local = full.df["ts"].dt.tz_convert("America/Chicago")
+    for i in range(1, len(full)):
+        if kmap[i] != kmap[i - 1]:
+            assert local.iloc[i].minute % 15 == 10, f"a 15m value arrived at {local.iloc[i]}"
+    return "later equal high is the pivot (Python and interpreter); 15m values arrive on the closing 5m bar"
+
+
+@check(17, "NASH has no lookahead", "truncating the data never changes a past NASH signal")
+def _phase17_lookahead() -> str:
+    from ee_agent.compile.to_python import compile_to_python
+    from ee_agent.engine.lookahead import detect
+
+    bars = _bars(limit=3000)
+    report = detect(compile_to_python(_nash_spec()), bars, sample=12)
+    assert not report.divergences, report.summary()
+    return f"CLEAN at {report.truncation_points} truncation points"
 
 
 # ----------------------------------------------------------------- runner

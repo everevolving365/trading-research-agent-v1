@@ -713,13 +713,31 @@ def test_library_is_offered_once_and_never_pushed(monkeypatch, tmp_path):
 def test_library_entries_are_full_specs():
     from ee_agent.library import loader
 
-    entry = loader.get("sweep-return-v1")
+    entry = loader.get("nash-breaker-block-v2")
     spec = entry.load_spec()
     assert spec.signals.entry and spec.risk.stop and spec.costs.commission_per_side > 0
+    assert entry.has_writeup and entry.original_files
 
 
-def test_missing_originals_are_reported_not_skipped(bars):
+def test_the_original_is_run_and_the_delta_reported(bars):
     from ee_agent.library import loader
 
-    delta = loader.signal_count_delta("sweep-return-v1", bars.slice(0, 1000))
-    assert "note" in delta
+    delta = loader.signal_count_delta("nash-breaker-block-v2", bars.slice(0, 1200))
+    assert delta["available"] and delta["agreed"], delta
+    assert delta["delta"] == 0 and delta["divergences"] == 0
+    assert delta["original_signals"] > 0
+
+
+def test_an_entry_without_an_original_says_so(tmp_path, bars):
+    import shutil
+
+    from ee_agent.library import loader
+
+    entry = tmp_path / "no-original"
+    entry.mkdir()
+    shutil.copy(loader.get("nash-breaker-block-v2").path / "spec.yaml", entry / "spec.yaml")
+    found = loader.entries(tmp_path)
+    assert found and not found[0].original_files
+    delta = loader.signal_count_delta("no-original", bars.slice(0, 300), root=tmp_path)
+    assert delta["available"] is False
+    assert "no original script" in delta["note"]

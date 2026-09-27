@@ -1,0 +1,159 @@
+{
+  "alerts": {
+    "long": {
+      "plan_hash": "sha256:411ad65c4cba1a4597f6eb61198bd8602d13b3bc17de48a9a0f7130863895f3b",
+      "price": "{{close}}",
+      "side": "long",
+      "signature": "<hmac-sha256 of the fields above, keyed by the client's webhook secret>",
+      "spec_hash": "sha256:f9c1c85613cd5ee9a6f477841d7edb9dbc1c8912367fca17b1ac227ddc0463b4",
+      "spec_id": "nash-breaker-block-v2",
+      "symbol": "{{ticker}}",
+      "time": "{{timenow}}"
+    },
+    "short": {
+      "plan_hash": "sha256:411ad65c4cba1a4597f6eb61198bd8602d13b3bc17de48a9a0f7130863895f3b",
+      "price": "{{close}}",
+      "side": "short",
+      "signature": "<hmac-sha256 of the fields above, keyed by the client's webhook secret>",
+      "spec_hash": "sha256:f9c1c85613cd5ee9a6f477841d7edb9dbc1c8912367fca17b1ac227ddc0463b4",
+      "spec_id": "nash-breaker-block-v2",
+      "symbol": "{{ticker}}",
+      "time": "{{timenow}}"
+    }
+  },
+  "autonomy": {
+    "level": 1
+  },
+  "contexts": [
+    {
+      "id": "fvg15",
+      "timeframe": "15",
+      "type": "htf_fvg"
+    }
+  ],
+  "costs": {
+    "commission_per_side": {
+      "unit": "currency",
+      "value": 2.0
+    },
+    "exchange_fees_per_side": {
+      "unit": "currency",
+      "value": 0.0
+    },
+    "slippage": {
+      "unit": "ticks",
+      "value": 1.0
+    },
+    "slippage_model": "volume_volatility",
+    "spread": {
+      "unit": "ticks",
+      "value": 1.0
+    }
+  },
+  "entries": [
+    {
+      "all_of": [
+        {
+          "confirm": "close",
+          "pivot_len": 3,
+          "side": "high",
+          "type": "structure_break"
+        },
+        {
+          "match_direction": true,
+          "max_age": 60,
+          "max_distance": {
+            "type": "points",
+            "value": 120
+          },
+          "must_be_unmitigated": false,
+          "reference": "fvg15",
+          "structure": {
+            "confirm": "close",
+            "pivot_len": 3,
+            "side": "high"
+          },
+          "type": "fvg_fuel"
+        }
+      ],
+      "any_of": [],
+      "id": "long",
+      "none_of": [],
+      "side": "long",
+      "timeframe": "5m"
+    },
+    {
+      "all_of": [
+        {
+          "confirm": "close",
+          "pivot_len": 3,
+          "side": "low",
+          "type": "structure_break"
+        },
+        {
+          "match_direction": true,
+          "max_age": 60,
+          "max_distance": {
+            "type": "points",
+            "value": 120
+          },
+          "must_be_unmitigated": false,
+          "reference": "fvg15",
+          "structure": {
+            "confirm": "close",
+            "pivot_len": 3,
+            "side": "low"
+          },
+          "type": "fvg_fuel"
+        }
+      ],
+      "any_of": [],
+      "id": "short",
+      "none_of": [],
+      "side": "short",
+      "timeframe": "5m"
+    }
+  ],
+  "execution": {
+    "bar_close_confirmation": true,
+    "entry_order": "market_on_close_of_signal_bar",
+    "gap_behavior": "fill_at_open",
+    "on_overlapping_signal": "ignore_new",
+    "session_close_behavior": "hold"
+  },
+  "exits": [],
+  "filters": {
+    "blackout_events": [],
+    "days_of_week": [],
+    "max_trades_per_day": null,
+    "time_windows": []
+  },
+  "instruments": [
+    "MNQ",
+    "NQ",
+    "ES",
+    "MES"
+  ],
+  "invalidation": [],
+  "plan_hash": "sha256:411ad65c4cba1a4597f6eb61198bd8602d13b3bc17de48a9a0f7130863895f3b",
+  "risk": {
+    "max_concurrent_positions": 1,
+    "scale_in": false,
+    "size": {
+      "method": "fixed_contracts",
+      "value": 1.0
+    },
+    "stop": {
+      "type": "points",
+      "value": 30.0
+    },
+    "target": {
+      "type": "points",
+      "value": 50.0
+    }
+  },
+  "session": "eth",
+  "spec_hash": "sha256:f9c1c85613cd5ee9a6f477841d7edb9dbc1c8912367fca17b1ac227ddc0463b4",
+  "spec_id": "nash-breaker-block-v2",
+  "timezone": "America/Chicago"
+}

@@ -1,0 +1,15 @@
+# How the parity harness runs the owner's original script (the fifth target).
+file: NASH-Breaker-Block-v2-ENTRY-SIGNALS.pine
+source: https://www.tradingview.com/script/bpH84GWN-NASH-Breaker-Block-v2-ENTRY-SIGNALS/
+author: everevolving365
+retrieved: '2026-09-26'
+sha256: 2e26a1cbd799c3d9f10d4cd687b40702fbda5a62398b147820037c2082774aef  # LF line endings
+# The script's own entry signals -- the "Long Entry" / "Short Entry" alert conditions.
+long: bosLong
+short: bosShort
+# Input overrides by title. Empty: the script runs exactly as published.
+inputs: {}
+# The script keeps every 15-minute gap it has ever seen and re-checks all of them on every
+# bar, so its cost grows with history. The harness runs it over the most recent bars only
+# and compares against the Python engine run over the SAME bars from the same start.
+window_bars: 2500

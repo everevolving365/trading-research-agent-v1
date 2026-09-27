@@ -1,18 +1,31 @@
 # BUILD LOG
-Last updated: 2026-09-22 (phase 16)
+Last updated: 2026-09-26 (phase 17)
 
 ## CURRENT STATE
-Phase: 16 — The desktop app — **acceptance PASSED**
-Status: sixteen phases complete. `make verify` runs 62 acceptance checks on a
-clean clone with zero credentials; `make test` runs 285 tests.
-**Every ability on the owner's requirement list is built.** `docs/STATUS.md`
-reports 79 of 83 `done`, 3 `runtime` (need the owner's own account to exercise
-live), and exactly 1 `partial`: ability 65's CPI dates, which needs a refresh
-from the BLS calendar rather than code.
+Phase: 17 — NASH Breaker Block v2 replaces Sweep Return — **acceptance PASSED**
+Status: seventeen phases complete. `make verify` runs 67 acceptance checks on a
+clean clone with zero credentials; `make test` runs 320 tests.
+The founder's library now holds the owner's own TradingView script, NASH Breaker
+Block v2, ported rule for rule and **proven identical to the original script**:
+the unmodified script runs as a fifth parity target (D-025, D-026).
 
-Next action: nothing is blocking. The highest-value next step is still not more
-code — it is running the Operator against the real TradingView site once B-001
-lands, because that is the only part of the system no fixture can validate.
+In progress, owner's request of 2026-09-26:
+- **Phase 18 — a real desktop app.** One double-click (or one sentence to
+  Claude) installs it and leaves an icon on the Desktop that opens the agent in
+  its own window. Written, not yet pushed: `ee_agent/desktop.py` (launcher,
+  single instance, heartbeat shutdown), `ee_agent/ui/icon.py` (icon drawn in
+  code), `install/windows/*.ps1`, `Install.bat`, `install.sh`,
+  `Install.command`, `CLAUDE.md`, `INSTALL.md`. Still to do: heartbeat, ping
+  and quit endpoints plus a Host-header check in `ui/server.py`;
+  `[project.gui-scripts] ee-agent-desktop`; EE_HOME defaulting to the per-user
+  data folder with the runtime logs untracked from git (they were being
+  committed from verify runs); tests; a real install on this machine.
+- **Phase 19 — a UI a five-year-old can use** that still shows every
+  capability: big picture cards, a guided journey, a big talk button, plain
+  words with "show me the details", and a Keys page.
+
+Owner decision waiting (B-008): NASH's stop, target, hours, daily cap and
+session-close rule are pending assumptions. The script draws entries only.
 
 ## HOW TO RESUME COLD
 Say "continue from BUILD-LOG.md". Then:
@@ -41,12 +54,15 @@ Say "continue from BUILD-LOG.md". Then:
 - [x] Phase 14 — Screenshot intake and export portals — acceptance PASSED 2026-09-21
 - [x] Phase 15 — Options as an asset class — acceptance PASSED 2026-09-21
 - [x] Phase 16 — The desktop app — acceptance PASSED 2026-09-22
+- [x] Phase 17 — NASH Breaker Block v2 replaces Sweep Return — acceptance PASSED 2026-09-26
+- [ ] Phase 18 — Installable desktop app (icon, own window) — in progress
+- [ ] Phase 19 — Child-friendly UI that still shows every capability — not started
 
 ## HOW TO CHECK THE BUILD YOURSELF
 
 ```bash
-make verify        # 62 acceptance checks, every phase, zero credentials, ~13 min
-make test          # 285 tests, ~14 min
+make verify        # 67 acceptance checks, every phase, zero credentials, ~15 min
+make test          # 320 tests, ~15 min
 ee-agent app       # THE DESKTOP APP -- start here, no terminal knowledge needed
 ee-agent demo      # a real backtest plus a parity proof, no keys
 ee-agent chat      # the same conversation in a terminal; 20 tools
@@ -56,19 +72,25 @@ ee-agent portal list
 ee-agent options chain SPY --delta 0.25 --tradeable
 ```
 
-The single most important line of output:
+The single most important line of output (`ee-agent parity nash-breaker-block-v2 --fixtures --symbols MNQ`):
 
 ```
-[parity] sweep-return-v1 on MNQ 5m over 17,061 bars
-    python           f6b93e53d785    1068 signals
-    pine_indicator   f6b93e53d785    1068 signals
-    pine_strategy    f6b93e53d785    1068 signals
-    live             f6b93e53d785    1068 signals
-    AGREED -- all 4 targets produced the identical fingerprint f6b93e53d785.
+[parity] nash-breaker-block-v2 on MNQ 5m over 16,365 bars
+    python           90a3867a6c86     515 signals  {'long': 258, 'short': 257}
+    pine_indicator   90a3867a6c86     515 signals  {'long': 258, 'short': 257}
+    pine_strategy    90a3867a6c86     515 signals  {'long': 258, 'short': 257}
+    live             90a3867a6c86     515 signals  {'long': 258, 'short': 257}
+    original         fdce94431ebd      74 signals  {'long': 48, 'short': 26}  <- owner's script, most recent 2,500 bars
+    python           fdce94431ebd      74 signals  {'long': 48, 'short': 26}  <- Python engine, the same bars
+    AGREED -- all 4 targets produced the identical fingerprint 90a3867a6c86.
+    AGREED -- the owner's own script (NASH-Breaker-Block-v2-ENTRY-SIGNALS.pine, unmodified)
+              matches the Python engine signal for signal over the most recent 2,500 bars.
 ```
 
-That is the one-sentence test, answered. It holds on MNQ, ES, SPY, EURUSD and
-BTCUSDT — futures, equity, forex and crypto, in three exchange timezones.
+That is the one-sentence test, answered, and for a ported strategy it now
+reaches all the way back to the script the owner trades from. The four-target
+proof also holds on MNQ, ES, SPY, EURUSD and BTCUSDT: futures, equity, forex
+and crypto, in three exchange timezones.
 
 ## COMPLETED
 
@@ -167,6 +189,21 @@ session token, because this app has the client's keychain behind it. Exposes the
 same 20 tools as `ee-agent chat`, so nothing the client can click reaches the
 order layer.
 
+**Phase 17** — *NASH Breaker Block v2* (D-025 to D-028). The owner's published
+TradingView script replaces Sweep Return in the founder's library. Six new
+primitives in all four targets: `structure_break` (latest confirmed pivot,
+TradingView's tie rule, one shot per level), `htf_fvg` (15-minute fair value
+gaps, visible only once the 15-minute bar has closed), `fvg_fuel`, and the
+script's two optional add-ons `htf_ema_side`, `session_open_levels` +
+`open_level_break`. A shared `ee_agent/data/htf.py` defines when a
+higher-timeframe value reaches a chart bar, for Python and the interpreter
+alike. The Pine interpreter grew until it runs the owner's v6 script unmodified
+(functions, loops, arrays, tuples, inputs, `request.security`), and the harness
+runs that script as a fifth target. Portability now covers distances inside
+entry rules. The capture parser recognises "break of structure with a fair
+value gap" in plain English and asks about anything left unsaid. The exits are
+pending assumptions from the owner's TopstepX bracket (B-008).
+
 **Phase 15** — *Options* (`ee_agent/instruments/options.py`,
 `ee_agent/data/options.py`, D-022). An option contract resolves to an ordinary
 `Instrument`, so the whole engine runs it with no asset-class branch. Parsing
@@ -221,6 +258,16 @@ Worth reading, because each was silent and each would have cost money:
     worked and it all lived behind a terminal. The owner asked how a client
     actually talks to the agent; the answer was a CLI, which does not satisfy
     "extremely user friendly". (D-024)
+16. **The interpreter short-circuited `and` in Pine v5 scripts.** v5
+    evaluates both sides; only v6 short-circuits. Latent, because no built-in
+    with state had sat on the right of an `and` yet. (D-027)
+17. **`ma_cross` fired on the first bar the slow average existed.** Python
+    treated the missing previous bar as "not above"; Pine's `ta.crossover`
+    needs a real previous bar. Exposed on an option contract once the fixture
+    window moved with the date. Fixed, with a regression test.
+18. **The original script failed its own checksum on Windows**, because a
+    Windows checkout writes CRLF. The checksum is now taken over LF text and
+    `.gitattributes` pins line endings. (D-026)
 
 ## OPEN THREADS
 
@@ -232,8 +279,9 @@ Ordered by value:
   corrections — they are all in one `SELECTORS` dict for exactly that reason.
 - **Run the portals against their live sites.** Same argument; `PORTALS` is one
   dict entry per venue. Three of the five need paid accounts.
-- **Drop the originals from B-003** into `library/sweep-return-v1/original/` and
-  the signal-count delta gets reported in `docs/STATUS.md`.
+- **Finish phase 18 and phase 19** (see CURRENT STATE).
+- **The owner's answers on NASH's exits (B-008)**, and his own
+  `how-i-trade-it.md` in his words.
 - **Refresh `research/calendar.json` CPI dates** from the BLS schedule (B-007).
   FOMC and NFP are already exact.
 - **Add a fetcher for whichever vendor the client picks** from `ee-agent

@@ -1,0 +1,7 @@
+# Pine scripts are compared byte for byte (see ee_agent/parity/original.py).
+*.pine text eol=lf
+# Installers must keep their platform's line endings wherever they are checked out.
+*.sh text eol=lf
+*.command text eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf

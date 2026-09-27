@@ -131,35 +131,58 @@ def catalogue() -> str:
     return "\n".join(lines)
 
 
-def signal_count_delta(entry_id: str, bars) -> dict:
-    """Section 11: report the signal-count delta between the generated scripts
-    and the owner's originals, for information only.
+def signal_count_delta(entry_id: str, bars, root: Path | None = None) -> dict:
+    """Section 11: the signal-count delta between the generated scripts and the
+    owner's original, over the same bars.
 
-    With the originals absent, that is stated rather than silently skipped.
+    Where the entry carries its original with a manifest, the original is run
+    unmodified through the Pine interpreter and compared bar for bar. Without
+    one, that is stated rather than silently skipped.
     """
-    entry = get(entry_id)
-    if not entry.original_files:
+    entry = get(entry_id, root)
+    from ee_agent.parity.original import load_original
+
+    script = load_original(entry.path)
+    if script is None:
         return {
             "entry": entry_id,
             "available": False,
+            "original_files": entry.original_files,
             "note": (
-                "The owner's original .pine files are not in the repository, so there is nothing to "
-                "compare against yet (BLOCKERS.md B-003). The generated scripts are still verified "
-                "against the Python engine and the live config by the parity harness."
+                "This entry has no original script with a manifest, so there is nothing to compare "
+                "against. The generated scripts are still verified against the Python engine and "
+                "the live config by the parity harness."
             ),
         }
     from ee_agent.parity.harness import run_parity
 
-    parity = run_parity(entry.load_spec(), bars)
+    parity = run_parity(entry.load_spec(), bars, original=script)
     generated = next((f for f in parity.fingerprints if f.target == "pine_indicator"), None)
+    if parity.original is not None:  # ran over a trailing window
+        orig_fp, same_bars_fp = parity.original.original, parity.original.python
+        n_bars, divergences = parity.original.n_bars, len(parity.original.divergences)
+        error = parity.original.error
+    else:
+        orig_fp = next((f for f in parity.fingerprints if f.target == "original"), None)
+        same_bars_fp, n_bars = generated, len(bars)
+        divergences = len(parity.divergences)
+        error = parity.errors.get("original", "")
+    original_signals = len(orig_fp.signals) if orig_fp else 0
+    generated_signals = len(same_bars_fp.signals) if same_bars_fp else 0
     return {
         "entry": entry_id,
         "available": True,
-        "generated_signals": len(generated.signals) if generated else 0,
         "original_files": entry.original_files,
+        "compared_bars": n_bars,
+        "original_signals": original_signals,
+        "generated_signals": generated_signals,
+        "delta": generated_signals - original_signals,
+        "divergences": divergences,
+        "agreed": parity.agreed,
+        "error": error,
         "note": (
-            "Counting signals from the original .pine requires running it through the Pine "
-            "interpreter as well; add the file contents and re-run. Reported for information only "
-            "-- the owner's ruling is that these are the same strategy."
+            f"The owner's original ({script.path.name}) was run unmodified over {n_bars:,} bars: "
+            f"{original_signals} signal(s) against {generated_signals} from the generated strategy, "
+            f"{divergences} bar(s) of disagreement."
         ),
     }

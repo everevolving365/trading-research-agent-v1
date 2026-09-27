@@ -148,6 +148,35 @@ def find_timezone(text: str) -> str | None:
     return None
 
 
+BOS_RE = re.compile(
+    r"\b(?:break(?:s|ing)? of structure|structure break|bos|breaks? (?:the )?(?:last |recent |latest )?"
+    r"(?:swing|pivot) (?:high|low))\b",
+    re.I,
+)
+FVG_RE = re.compile(r"\b(?:fair value gaps?|fvgs?|imbalances?)\b", re.I)
+FVG_TF_RE = re.compile(r"\b(\d+)\s*(?:-)?\s*(?:minute|min|m)\s*(?:fair value gap|fvg|imbalance)", re.I)
+PIVOT_RE = re.compile(
+    r"(?:(?P<n>\d+)\s*(?:bars?|candles?)\s*(?:on\s*)?(?:each|either|both)\s*sides?"
+    r"|pivot (?:length|len) (?:of )?(?P<n2>\d+))",
+    re.I,
+)
+GAP_DISTANCE_RE = re.compile(
+    r"within\s+(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>points?|pts|ticks?)", re.I
+)
+GAP_AGE_RE = re.compile(
+    r"(?:last|within the last|no older than|at most)\s+(?P<n>\d+)\s*(?:bars?|candles?)", re.I
+)
+
+
+def _fvg_timeframe(text: str, found: dict, missing: list) -> str:
+    m = FVG_TF_RE.search(text)
+    if m:
+        found["gap_timeframe"] = f"{m.group(1)} minute"
+        return m.group(1)
+    missing.append("which timeframe the fair value gaps come from")
+    return "15"
+
+
 def find_distance(text: str, *keywords: str) -> tuple[Distance | None, str]:
     """Find a distance stated near one of the keywords ('stop', 'target').
 
@@ -180,7 +209,11 @@ def _to_distance(match: "re.Match") -> Distance:
 
 
 def find_timeframe(text: str) -> str | None:
-    m = re.search(r"\b(\d+)\s*(?:-)?\s*(minute|min|m|hour|h)\b(?:\s*(?:chart|bars?|candles?))?", text, re.I)
+    # "the 5 minute chart" beats "a 15 minute fair value gap": prefer a
+    # timeframe that is named as the chart, then fall back to the first one.
+    m = re.search(r"\b(\d+)\s*(?:-)?\s*(minute|min|m|hour|h)\b\s*(?:chart|bars?|candles?)", text, re.I)
+    if not m:
+        m = re.search(r"\b(\d+)\s*(?:-)?\s*(minute|min|m|hour|h)\b", text, re.I)
     if not m:
         return None
     n, unit = m.group(1), m.group(2).lower()
@@ -253,6 +286,56 @@ def parse(text: str, strategy_id: str = "captured-v1", name: str = "") -> Parsed
                     all_of=[
                         Condition("range_break", {"reference": "opening_range", "side": side, "confirm": "wick"}),
                         Condition("return_inside", {"reference": "opening_range", "confirm": "close"}),
+                    ],
+                )
+            )
+    elif BOS_RE.search(text) and FVG_RE.search(text):
+        found["pattern"] = "break of structure with a fair value gap behind it"
+        context.append(ContextBlock(id="fvg", type="htf_fvg", params={"timeframe": _fvg_timeframe(text, found, missing)}))
+        structure: dict = {}
+        fuel: dict = {"reference": "fvg"}
+        pm = PIVOT_RE.search(text)
+        if pm:
+            structure["pivot_len"] = int(pm.group("n") or pm.group("n2"))
+            found["pivot_len"] = pm.group("n") or pm.group("n2")
+            quotes["pivot_len"] = pm.group(0)
+        else:
+            missing.append("how many bars on each side make a swing high or low")
+        if re.search(r"\bwick", lowered):
+            structure["confirm"] = "wick"
+            found["break_confirm"] = "a wick through the level"
+        elif re.search(r"\bclos(?:e|es|ing)\b", lowered):
+            structure["confirm"] = "close"
+            found["break_confirm"] = "a close through the level"
+        else:
+            missing.append("whether a close or just a wick through the level counts as the break")
+        dm = GAP_DISTANCE_RE.search(text)
+        if dm:
+            fuel["max_distance"] = {"type": UNIT_MAP.get(dm.group("unit").lower().rstrip("s"), "points"),
+                                    "value": float(dm.group("value"))}
+            found["gap_distance"] = f"{dm.group('value')} {dm.group('unit')}"
+            quotes["gap_distance"] = dm.group(0)
+        else:
+            missing.append("how far from the broken level the gap may sit")
+        am = GAP_AGE_RE.search(text)
+        if am:
+            fuel["max_age"] = int(am.group("n"))
+            found["gap_age"] = f"{am.group('n')} bars"
+            quotes["gap_age"] = am.group(0)
+        else:
+            missing.append("how old the gap may be")
+        if re.search(r"\b(?:unmitigated|unfilled|still open|untouched)\b", lowered):
+            fuel["must_be_unmitigated"] = True
+            found["gap_state"] = "the gap must still be open"
+        for side, rule_side in (("high", "long"), ("low", "short")):
+            entry.append(
+                SignalRule(
+                    id=rule_side,
+                    side=rule_side,
+                    timeframe=timeframe,
+                    all_of=[
+                        Condition("structure_break", {"side": side, **structure}),
+                        Condition("fvg_fuel", dict(fuel)),
                     ],
                 )
             )

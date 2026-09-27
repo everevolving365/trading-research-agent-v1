@@ -137,8 +137,8 @@ because the remaining part is a runtime input, not a build dependency
 |---|---|---|---|
 | 77 | Client's own strategy is the default | done | Enforced in code: `should_offer()` returns False after one mention. |
 | 78 | Library as a secondary option, offered once | done | One sentence, no default selection, no upsell. |
-| 79 | Entries are full specs | done | `library/sweep-return-v1/spec.yaml` is a complete spec and inherits every guarantee. |
-| 80 | The library grows | done | Drop a directory with a `spec.yaml` into `library/`. |
+| 79 | Entries are full specs | done | `library/nash-breaker-block-v2/spec.yaml` is a complete spec and inherits every guarantee. The owner's original TradingView script sits in `original/`, checksummed, and runs as a fifth parity target: the port is proven identical to the script bar for bar, including with each of the script's optional switches flipped on. |
+| 80 | The library grows | done | Drop a directory with a `spec.yaml` into `library/`. Add `original/` with the script and a `manifest.yaml` naming its long and short signals, and parity checks the port against it automatically. |
 
 ## K. Product surface
 
@@ -177,3 +177,8 @@ own JSON, and compares signal fingerprints bar by bar. On MNQ, ES, SPY and
 BTCUSDT over a full year, all four produce the identical fingerprint. A
 deliberately sabotaged emission is caught by the same harness, which is how we
 know the test can fail.
+
+For a strategy ported from a script, there is a fifth target: the script
+itself. NASH Breaker Block v2 is run unmodified, straight from the owner's
+TradingView source, and agrees with the Python engine, both generated scripts
+and the live config signal for signal (D-026).

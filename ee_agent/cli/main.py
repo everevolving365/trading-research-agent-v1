@@ -13,7 +13,7 @@ from pathlib import Path
 
 
 
-VERSION = "2.2.0"
+VERSION = "2.4.0"
 
 BANNER = r"""
   EverEvolving Trading Agent  v{version}
@@ -52,8 +52,20 @@ def cmd_demo(args) -> int:
     from ee_agent.spec.model import StrategySpec
 
     print(BANNER.format(version=VERSION))
-    print("Running the demo on committed fixture data. No keys, no network, no cost.\n")
-    spec = StrategySpec.load(Path(__file__).resolve().parents[2] / "tests/fixtures/specs/sweep-return-atr.yaml")
+    print("Running the demo on committed fixture data. No keys, no network, no cost.")
+    print(
+        "The strategy is NASH Breaker Block v2 (library/nash-breaker-block-v2). The fixture prices\n"
+        "are SYNTHETIC -- generated so the demo runs offline -- so the numbers below show the\n"
+        "machinery working, not how NASH performs on real MNQ.\n"
+    )
+    spec = StrategySpec.load(Path(__file__).resolve().parents[2] / "library/nash-breaker-block-v2/spec.yaml")
+    pending = [a.id for a in spec.unresolved_assumptions()]
+    if pending:
+        print(
+            f"[assumptions] still pending the owner's approval: {', '.join(pending)}.\n"
+            "              The script draws entries only; the exits used here come from the owner's\n"
+            "              TopstepX bracket and are not confirmed. Live trading stays blocked until they are.\n"
+        )
     bars = _load(args.symbol, args.timeframe, fixtures=True)
     print()
     report = TruthEngine(spec, monte_carlo_paths=400, synthetic_paths=3).analyze(bars)
@@ -62,7 +74,8 @@ def cmd_demo(args) -> int:
     print(run_parity(spec, bars.slice(0, min(4000, len(bars)))).report())
     print(
         "\nThat is the whole loop: your rules -> one spec -> Python, Pine indicator, Pine strategy "
-        "and live config, all proven identical.\n"
+        "and live config, all proven identical -- and, for a strategy ported from a script, "
+        "proven identical to that script too.\n"
         "Next: `ee-agent capture` to describe your own strategy out loud or in text."
     )
     return 0

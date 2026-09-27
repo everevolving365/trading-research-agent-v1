@@ -38,9 +38,11 @@ def spec():
 
 @pytest.fixture
 def owner_spec():
+    """The owner's library strategy: NASH Breaker Block v2, stated in points
+    exactly as his script states it."""
     from ee_agent.spec.model import StrategySpec
 
-    return StrategySpec.load(REPO / "library/sweep-return-v1/spec.yaml")
+    return StrategySpec.load(REPO / "library/nash-breaker-block-v2/spec.yaml")
 
 
 @pytest.fixture

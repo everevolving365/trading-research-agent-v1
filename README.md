@@ -15,20 +15,29 @@ strategies, does not set risk, and does not tell anyone what to trade.
 > the same object, and the agent can show you the proof.
 
 ```
-$ ee-agent parity library/sweep-return-v1/spec.yaml --fixtures
+$ ee-agent parity nash-breaker-block-v2 --fixtures --symbols MNQ
 
-[parity] sweep-return-v1 on MNQ 5m over 17,061 bars
-    python           37bcb3993135     223 signals  {'short': 114, 'long': 109}
-    pine_indicator   37bcb3993135     223 signals  {'short': 114, 'long': 109}
-    pine_strategy    37bcb3993135     223 signals  {'short': 114, 'long': 109}
-    live             37bcb3993135     223 signals  {'short': 114, 'long': 109}
-    AGREED -- all 4 targets produced the identical fingerprint 37bcb3993135.
+[parity] nash-breaker-block-v2 on MNQ 5m over 16,365 bars
+    python           90a3867a6c86     515 signals  {'long': 258, 'short': 257}
+    pine_indicator   90a3867a6c86     515 signals  {'long': 258, 'short': 257}
+    pine_strategy    90a3867a6c86     515 signals  {'long': 258, 'short': 257}
+    live             90a3867a6c86     515 signals  {'long': 258, 'short': 257}
+    original         fdce94431ebd      74 signals  {'long': 48, 'short': 26}  <- owner's script, most recent 2,500 bars
+    python           fdce94431ebd      74 signals  {'long': 48, 'short': 26}  <- Python engine, the same bars
+    AGREED -- all 4 targets produced the identical fingerprint 90a3867a6c86.
+    AGREED -- the owner's own script (NASH-Breaker-Block-v2-ENTRY-SIGNALS.pine, unmodified)
+              matches the Python engine signal for signal over the most recent 2,500 bars.
 ```
 
 That is not four re-runs of one code path. The Python engine evaluates the
 compiled plan; a Pine interpreter parses and executes the **emitted Pine source
-text** bar by bar; the live config is rebuilt from its own JSON by the execution
-layer. Four independent paths, one fingerprint.
+text** bar by bar; the live config is rebuilt from its own JSON by the
+execution layer. Four independent paths, one fingerprint.
+
+And for a strategy ported from a script there is a fifth: **the script itself**.
+NASH Breaker Block v2 is the owner's own TradingView indicator. Its original
+source runs unmodified through the same interpreter and matches the port signal
+for signal. The port is not a lookalike; it is provably the script.
 
 ## Install
 
@@ -128,21 +137,39 @@ ee-agent verify                             # every acceptance check for every p
 
 ### A result looks like this
 
+On the committed fixture data -- synthetic prices, so this shows the machinery,
+not how NASH trades real MNQ:
+
 ```
-  sweep-return-v1 on MNQ 5m  [full]
-  Net P&L              -6,216.96     Trades               329
-  Max drawdown          6,295.37     Win rate          27.7%
-[walk-forward] rolling, 5 windows; 0 of 5 profitable out of sample
-[monte carlo] 2,000 block paths: drawdown median 6,393, 95th 8,514
-[lookahead] CLEAN -- 24 truncation points re-evaluated, every signal identical
-[combine] Topstep 50K: 0% of 1,000 simulated runs pass, 73% blow it
+  nash-breaker-block-v2 on MNQ 5m  [full]
+  Net P&L                3,868.74     Trades               249
+  Max drawdown           6,628.00     Win rate          35.3%
+[walk-forward] rolling, 5 window(s); 1 of 5 profitable out of sample
+[monte carlo] 400 block paths: final P&L 5-95% band [-4,761, -1,032]; 0% of paths profitable
+[lookahead] CLEAN -- 24 truncation point(s) re-evaluated, every signal identical with the future removed.
+[combine] Topstep 50K Combine: 0% of 1,000 simulated runs pass, 86% blow it, 14% neither.
 [adversarial] the case against this result:
-    [SERIOUS] window dependence: Only 0 of 5 out-of-sample windows are profitable.
+    [SERIOUS] window dependence: Only 1 of 5 out-of-sample windows are profitable.
     [SERIOUS] path dependence: Only 0% of resampled paths finish profitable.
-    VERDICT: 2 serious findings. This does not survive the adversarial pass.
+    [SERIOUS] profit concentration: The top 12 trade(s) are 202% of the net result.
+    VERDICT: 4 serious findings. This does not survive the adversarial pass.
 ```
 
-It tells you when your strategy does not work. That is the product.
+A positive net P&L and a verdict that it does not survive: the number alone
+would have looked like an edge. It tells you when your strategy does not work. That is the product.
+
+## The founder's library
+
+One strategy ships with the agent, offered once and never pushed -- your own
+strategy is always the default:
+
+**NASH Breaker Block v2** (`library/nash-breaker-block-v2/`): a 5-minute close
+through the latest confirmed swing high or low, taken only when a 15-minute fair
+value gap sits behind the move. Ported rule for rule from the owner's published
+TradingView script, which is kept byte for byte in `original/` and proven
+identical by parity. The script draws entries only, so its stop, target and
+trading hours are logged as assumptions waiting for the owner's approval; until
+then the agent backtests it and will not trade it live.
 
 ## Architecture
 

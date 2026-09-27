@@ -160,6 +160,7 @@ def validate(spec: StrategySpec, *, for_live: bool = False) -> ValidationReport:
             )
         for cond in rule.conditions:
             _check_condition(cond, context_ids, f, f"signal/{rule.id}")
+        _check_structure_pairing(rule, spec, f)
 
     for cond in spec.signals.invalidation:
         _check_condition(cond, context_ids, f, "invalidation")
@@ -247,6 +248,57 @@ def validate(spec: StrategySpec, *, for_live: bool = False) -> ValidationReport:
             f.append(Finding(severity, "CHK001", f"unanswered: {question}", f"checklist/{key}"))
 
     return ValidationReport(f)
+
+
+#: Conditions that read a context of one specific type.
+_REFERENCE_TYPES = {
+    "fvg_fuel": "htf_fvg",
+    "open_level_break": "session_open_levels",
+    "range_break": "session_range",
+    "return_inside": "session_range",
+}
+
+
+def _check_structure_pairing(rule, spec: StrategySpec, f: list[Finding]) -> None:
+    """``fvg_fuel`` measures distance from the level a ``structure_break`` in the
+    same rule is breaking, and is only defined on that break's bar -- so the
+    break must be a required (all_of) condition of the rule."""
+    where = f"signal/{rule.id}"
+    kinds = {c.type: c for c in rule.all_of}
+    if any(c.type == "fvg_fuel" for c in rule.conditions) and "structure_break" not in kinds:
+        f.append(
+            Finding(
+                "error",
+                "SIG010",
+                "fvg_fuel needs a structure_break in the same rule's all_of: it measures the gap "
+                "against the level being broken",
+                where,
+            )
+        )
+    breaks = [c for c in rule.conditions if c.type == "structure_break"]
+    if len({(c.params.get("side"), c.params.get("pivot_len", 3), c.params.get("confirm", "close")) for c in breaks}) > 1:
+        f.append(
+            Finding(
+                "error",
+                "SIG011",
+                "more than one different structure_break in one rule: fvg_fuel could not tell "
+                "which level it is measuring from",
+                where,
+            )
+        )
+    by_id = {c.id: c.type for c in spec.context}
+    for cond in rule.conditions:
+        wanted = _REFERENCE_TYPES.get(cond.type)
+        ref = cond.params.get("reference")
+        if wanted and ref in by_id and by_id[ref] != wanted:
+            f.append(
+                Finding(
+                    "error",
+                    "PRIM006",
+                    f"'{cond.type}' needs a {wanted} context, but '{ref}' is a {by_id[ref]}",
+                    where,
+                )
+            )
 
 
 def _check_condition(cond, context_ids: set[str], f: list[Finding], where: str) -> None:

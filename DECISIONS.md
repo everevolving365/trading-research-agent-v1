@@ -455,3 +455,116 @@ The app exposes exactly the same 20 tools as `ee-agent chat`, which means the
 same guarantee holds: nothing the client can click reaches the order layer.
 Order placement stays behind the position ledger and the autonomy ladder, and a
 test asserts the window exposes no order verb.
+
+---
+
+## D-025 — NASH Breaker Block v2 replaces Sweep Return in the founder's library
+Date: 2026-09-26
+Context: The owner asked to swap the Sweep Return strategy for his own published
+TradingView indicator, NASH Breaker Block v2 ENTRY SIGNALS
+(tradingview.com/script/bpH84GWN). It is his script (author everevolving365) and
+open source, so it belongs in the founder's library and its exact source can be
+kept alongside as the regression baseline Section 11 asks for.
+Options: (a) re-describe the strategy in words and capture it like a client
+would; (b) port the script's rules exactly, from its code, with its defaults;
+(c) keep both entries.
+Chosen: (b). `library/nash-breaker-block-v2/` holds the spec, the original
+script byte for byte (`original/`, checksummed), the four generated artifacts,
+and a plain-English description that says plainly it was read from the code
+and is not the owner's own write-up. `library/sweep-return-v1/` is removed.
+Reasoning: the script IS the owner's statement of the strategy, so porting from
+it infers nothing. Describing it in words first would have put a lossy step
+between the owner and his own rules.
+What the script does not say, the spec does not invent (hard rule 1). The script
+draws entries only. Stop and target are taken from the owner's TopstepX bracket
+(about $60 risk and $100 profit on one MNQ contract: 30 and 50 points), logged
+as PENDING assumptions with the other readings (15/25 points if that bracket
+applied to the 2-contract position the old bot traded), together with the time
+filter, the daily cap and the session-close rule. The spec backtests; the
+validator blocks it from live capital until the owner approves or replaces them.
+Kept: `tests/fixtures/specs/sweep-return-atr.yaml` stays as internal test data.
+Dozens of tests and several acceptance checks are calibrated on it, and it
+exercises primitives NASH does not use (session ranges, returns inside,
+session-end invalidation). It is not offered to anyone.
+Reversible: yes; the old entry is in git history.
+
+---
+
+## D-026 — The owner's original script is a fifth parity target
+Date: 2026-09-26
+Context: For a strategy ported from a script, "the strategy you described and
+the strategy trading your account are provably the same object" means the port
+must be provably the script. Comparing the four generated targets with each
+other proves they agree; it does not prove they agree with what the owner has
+on his chart.
+Chosen: the Pine interpreter was extended until it runs the owner's v6 script
+unmodified (user functions with local scope, `for ... to` counting both ways
+with `break`, arrays, tuples, `input.*` defaults and overrides by title,
+`request.security` on intraday higher timeframes, `ta.pivothigh/low`, `hour()`
+and `minute()` with a timezone, drawing calls as no-ops). The harness finds
+`original/manifest.yaml`, runs the script and compares its `bosLong`/`bosShort`
+against the Python engine bar for bar.
+Two practical details:
+- The script keeps every 15-minute gap it ever saw and re-checks all of them on
+  every bar, so its cost grows with history. Over a long dataset the harness
+  runs it on the most recent 2,500 bars and re-runs the Python engine over those
+  same bars from the same first bar. Short datasets include it as a fifth
+  fingerprint directly.
+- The checksum is taken over the script with LF line endings. A Windows
+  checkout turns LF into CRLF; that is not a change to the script, and without
+  this the byte check failed on the machine it was written on. `.gitattributes`
+  now pins `*.pine` to LF as well.
+Result: all five agree on the committed MNQ data (518 signals over 16,415 bars
+for the four generated targets; the original agrees on its window), and on
+round-the-clock synthetic data with every optional switch in the script flipped
+on in turn.
+Reversible: yes; `run_parity(..., original=None)` skips it.
+
+---
+
+## D-027 — Four TradingView semantics, pinned down
+Date: 2026-09-26
+Each of these changes signals, and each is now defined once and shared by the
+Python primitives and the interpreter so the two cannot drift.
+1. **Pivot ties.** `ta.pivothigh(high, 3, 3)`: an equal high on the LEFT does
+   not disqualify a candidate, an equal high on the RIGHT does. Of two equal
+   highs the later one is the pivot. (Source: TradingView's behaviour as
+   reproduced by LuxAlgo's PineTS, PR #322.) Pivot lows mirror it.
+2. **Higher-timeframe timing** (`ee_agent/data/htf.py`). With
+   `lookahead_off`, a historical chart bar sees the latest 15-minute bar that
+   had closed by its own close: the 09:00 to 09:15 bar reaches a 5-minute chart
+   on the 09:10 bar. A missing closing bar delays it to the next bar. Daily
+   bars are refused rather than rebuilt from midnight, because a futures daily
+   bar follows the exchange session. `lookahead_on` is refused outright.
+3. **`and`/`or` evaluation.** Pine v6 short-circuits; Pine v5 evaluates both
+   sides. The interpreter short-circuited everything, which is wrong for every
+   v5 script we emit. Harmless for the primitives we had (no built-in with state
+   sat on the right of an `and`), but a latent parity bug; now version-aware.
+4. **`request.security_lower_tf`** has no 1-minute data behind it here. It
+   returns a one-element array with the chart bar's own value, which is exact
+   for anything read at a chart-bar boundary. NASH reads opens at 17:00, 23:00
+   and 08:30, all on 5-minute boundaries, so the approximation is exact for it.
+   The run records a note whenever it is used, and the `session_open_levels`
+   primitive refuses a chart timeframe that does not divide its anchors.
+
+---
+
+## D-028 — Fuel is defined on the break bar; distances inside rules are portable too
+Date: 2026-09-26
+Context: two details of the port where the obvious implementation was wrong.
+1. `fvg_fuel` is "the level broke on this bar AND a qualifying gap exists", and
+   the gap search runs only on a break bar, in Python and in the emitted Pine
+   (as a ternary, which is lazy in every Pine version). The owner's v6 script
+   evaluates it the same way. Pine v5 would otherwise evaluate the search on
+   every bar, a real cost on TradingView and 16,000 function calls per run in
+   the interpreter. The validator requires the `structure_break` in the same
+   rule's `all_of`, so gating changes no result.
+2. Mitigation in the generated script is tracked only while a gap can still be
+   read (the largest `max_age` referencing it). An older gap is never read
+   again, so the result is identical, and TradingView's per-bar loop stays
+   short. The original script re-checks every gap forever, which is why it is
+   the slow target.
+3. Portability now covers distances inside entry rules, not only risk. "A gap
+   within 120 points of the level" is 60% of a typical MNQ day and 240% of an ES
+   day. `ee-agent spec portable` measures the ATR(14) equivalent and shows it for
+   approval, exactly as it does for stops and targets.

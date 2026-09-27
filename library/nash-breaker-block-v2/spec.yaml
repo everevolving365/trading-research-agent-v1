@@ -1,0 +1,142 @@
+spec_version: 1
+id: nash-breaker-block-v2
+name: NASH Breaker Block v2
+author: owner
+created: '2026-09-26'
+source_transcript: library/nash-breaker-block-v2/how-i-trade-it.md
+universe:
+  instruments: [MNQ, NQ, ES, MES]
+  session: eth
+  timezone: America/Chicago
+context:
+- id: fvg15
+  type: htf_fvg
+  timeframe: '15'
+signals:
+  entry:
+  - id: long
+    side: long
+    timeframe: 5m
+    all_of:
+    - type: structure_break
+      side: high
+      pivot_len: 3
+      confirm: close
+    - type: fvg_fuel
+      reference: fvg15
+      max_distance: {type: points, value: 120}
+      max_age: 60
+      match_direction: true
+      must_be_unmitigated: false
+  - id: short
+    side: short
+    timeframe: 5m
+    all_of:
+    - type: structure_break
+      side: low
+      pivot_len: 3
+      confirm: close
+    - type: fvg_fuel
+      reference: fvg15
+      max_distance: {type: points, value: 120}
+      max_age: 60
+      match_direction: true
+      must_be_unmitigated: false
+filters: {}
+risk:
+  stop: {type: points, value: 30}
+  target: {type: points, value: 50}
+  size: {method: fixed_contracts, value: 1}
+  max_concurrent_positions: 1
+  scale_in: false
+execution:
+  entry_order: market_on_close_of_signal_bar
+  session_close_behavior: hold
+  on_overlapping_signal: ignore_new
+  gap_behavior: fill_at_open
+  bar_close_confirmation: true
+costs:
+  commission_per_side: {unit: currency, value: 2.0}
+  slippage: {unit: ticks, value: 1}
+  spread: {unit: ticks, value: 1}
+  slippage_model: volume_volatility
+  exchange_fees_per_side: {unit: currency, value: 0.0}
+assumptions:
+- id: entry_trigger
+  question: What fires the entry?
+  resolution: >-
+    The script's own BOS + FVG engine with its default inputs, exactly: a 5-minute close
+    through the latest confirmed 3-bar pivot high (long) or low (short), once per level, with a
+    bullish (bearish) 15-minute fair value gap created in the last 60 bars whose top (bottom) sits
+    at or below (above) the broken level and within 120 points of it.
+  approved_by: owner-script
+  alternatives: []
+  sensitivity: {}
+- id: invalidation
+  question: What tells you the setup is dead?
+  resolution: >-
+    The script's own rule: a structure level can fire once. The first close through it burns it,
+    whether or not a gap qualified, and only a newer confirmed pivot brings a new level.
+  approved_by: owner-script
+  alternatives: []
+  sensitivity: {}
+- id: stop_placement
+  question: Where does the stop go? The indicator draws entries only -- it has no stop.
+  resolution: >-
+    30 points from entry, read from the TopstepX Auto OCO bracket on the owner's account
+    (risk ~$60 on 1 MNQ at $2/point). NOT confirmed for this strategy.
+  approved_by: pending
+  alternatives:
+  - 15 points (the same $60 bracket if it applied to the 2-contract position the old bot traded)
+  - a stop beyond the fair value gap or the pivot that was broken
+  sensitivity: {}
+- id: target_logic
+  question: Where does the target go? The indicator has no exit.
+  resolution: >-
+    50 points from entry, read from the same Auto OCO bracket (profit ~$100 on 1 MNQ).
+    NOT confirmed for this strategy.
+  approved_by: pending
+  alternatives:
+  - 25 points (the $100 bracket on a 2-contract position)
+  - the opposite structure level, or a fixed R multiple of the stop
+  sensitivity: {}
+- id: session_filter
+  question: Which hours does it trade? The script has no time filter.
+  resolution: every bar the chart shows -- no filter, as the script is written
+  approved_by: pending
+  alternatives:
+  - New York session only (08:30-15:00 CT)
+  sensitivity: {}
+- id: max_trades_per_day
+  question: How many signals a day will you take?
+  resolution: no cap -- the script does not cap signals
+  approved_by: pending
+  alternatives:
+  - one or two a day, as the Topstep daily loss limit would suggest
+  sensitivity: {}
+- id: session_close_behavior
+  question: What happens to an open position at the session close?
+  resolution: held until the bracket closes it (the script never flattens)
+  approved_by: pending
+  alternatives:
+  - flatten at 15:00 CT
+  sensitivity: {}
+notes: |
+  The owner's own open-source TradingView script, NASH Breaker Block v2 ENTRY SIGNALS
+  (https://www.tradingview.com/script/bpH84GWN-NASH-Breaker-Block-v2-ENTRY-SIGNALS/), kept verbatim
+  in original/. The entry rules are the script's BOS + FVG engine with its default inputs: nothing
+  is inferred, and the original runs as a fifth parity target -- the generated indicator, the
+  strategy script, the Python engine, the live config and the owner's own script must agree
+  signal for signal.
+
+  The script draws entries only. Everything about exits (stop, target, session close, daily cap)
+  is logged above as a PENDING assumption: it came from the owner's TopstepX bracket settings,
+  not from this script, and the agent does not set risk (hard rule 1). Until the owner approves
+  or replaces them the spec backtests, and the validator blocks it from live capital.
+
+  The script's two optional add-ons are OFF by default and so are off here. To switch one on, add
+  to both rules' all_of:
+    "ALSO require EMA side"         -> {type: htf_ema_side, timeframe: '15', length: 21}
+    "ALSO require an open-level break" -> a session_open_levels context (17:00, 23:00, 08:30 CT)
+                                      and {type: open_level_break, reference: <its id>, confirm: wick}
+  Both are parity-tested against the original script with the matching input switched on.

@@ -121,7 +121,8 @@ def test_atr_conversion_is_unapproved_until_the_client_approves(owner_spec, bars
     assert rows and is_portable(proposed)
     assert proposed.unresolved_assumptions(), "a conversion was applied without approval"
     approved, _ = to_atr_units(owner_spec, bars, approved_by="owner")
-    assert not approved.unresolved_assumptions()
+    assert not [a for a in approved.unresolved_assumptions() if a.id.startswith("portability")]
+    assert is_portable(approved)
 
 
 def test_atr_spec_is_portable(spec):

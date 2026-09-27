@@ -43,21 +43,34 @@ implemented; the owner's robot is an additional adapter, not a dependency.
 
 ---
 
-## B-003 — The two EE Sweep Return `.pine` files and `how-i-trade-it.md`
-**Blocks:** the signal-count delta between the generated scripts and the
-owner's originals, which Section 11 asks for "for information only".
-**Needs from owner:** `EE-Sweep-Return-v1.pine` and
-`EE-Sweep-Return-STRATEGY-v1.pine` dropped into
-`library/sweep-return-v1/original/`, plus the write-up.
-**Workaround built:** the library entry is a complete spec built from the
-strategy description in Section 11 and the owner's authoritative ruling that the
-two files are the same strategy with bar-close confirmation on the strategy
-script. It compiles to all four targets and the parity harness proves they
-agree. `library.loader.signal_count_delta()` reports the absence explicitly
-rather than skipping it silently.
-**Impact if never resolved:** no regression baseline against the original
-scripts. The generated scripts are still proven consistent with each other and
-with the Python engine.
+## B-003 — Original scripts for the founder's library
+**Blocks:** nothing any more.
+**History:** the first library entry, EE Sweep Return, had no original `.pine`
+files in the repository, so the Section 11 regression baseline could not run.
+On 2026-09-26 the owner replaced that entry with his published TradingView
+script, NASH Breaker Block v2 (D-025). Its exact source is in
+`library/nash-breaker-block-v2/original/`, checksummed, and runs as a fifth
+parity target (D-026). The signal-count delta is reported and is zero.
+**Still wanted from the owner:** his own `how-i-trade-it.md` in his words. The
+current file is a description read from the code and says so.
+**Status:** RESOLVED (2026-09-26)
+
+---
+
+## B-008 — The NASH exits need the owner's decision
+**Blocks:** live trading of NASH Breaker Block v2, by design. Backtests,
+parity and replay all run.
+**Needs from owner:** confirm or replace five assumptions in
+`library/nash-breaker-block-v2/spec.yaml`: stop (30 points), target (50
+points), trading hours (none), daily cap (none) and session close (hold).
+**Why it is a blocker:** the script draws entries only. The spec fills the
+exits from the TopstepX Auto OCO bracket on the owner's account (about $60 risk
+and $100 profit on one MNQ contract), but that bracket was set for a different
+bot and may have applied to two contracts (then it would be 15 and 25 points).
+The agent does not set risk (hard rule 1), so these stay pending and the
+validator keeps the spec away from live capital until they are approved.
+**Workaround built:** everything else. `ee-agent analyze` and the demo run with
+the pending values and say that they are pending.
 **Status:** OPEN
 
 ---

@@ -134,7 +134,7 @@ Then run it through the replay harness, which puts it under the real live code
 path with recorded history:
 
 ```bash
-ee-agent replay library/sweep-return-v1/spec.yaml --fixtures --sessions 5
+ee-agent replay library/nash-breaker-block-v2/spec.yaml --fixtures --sessions 5
 ```
 
 ## Order tagging

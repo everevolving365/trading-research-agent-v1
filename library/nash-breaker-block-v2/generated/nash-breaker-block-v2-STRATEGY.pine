@@ -1,0 +1,105 @@
+//@version=5
+// NASH Breaker Block v2 -- strategy script (Strategy Tester / Deep Backtesting)
+// GENERATED from spec nash-breaker-block-v2 (sha256:f9c1c85613cd5ee9a6f477841d7edb9dbc1c8912367fca17b1ac227ddc0463b4)
+strategy("NASH Breaker Block v2 [strategy]", overlay=true, default_qty_type=strategy.fixed, default_qty_value=1, pyramiding=0, commission_type=strategy.commission.cash_per_contract, commission_value=2.37, slippage=2, calc_on_every_tick=false, process_orders_on_close=true, initial_capital=50000)
+
+// ---- generated context -------------------------------------------------
+// context fvg15: 15-minute fair value gaps, recorded when the 15-minute bar closes
+[fvg15_h0, fvg15_l0, fvg15_h2, fvg15_l2, fvg15_bi] = request.security(syminfo.tickerid, "15", [high, low, high[2], low[2], bar_index], lookahead=barmerge.lookahead_off)
+fvg15_new = ta.change(fvg15_bi) != 0
+fvg15_bull = fvg15_new and fvg15_h2 < fvg15_l0
+fvg15_bear = fvg15_new and fvg15_l2 > fvg15_h0
+var fvg15_top = array.new_float()
+var fvg15_bot = array.new_float()
+var fvg15_dir = array.new_int()
+var fvg15_bar = array.new_int()
+var fvg15_mit = array.new_bool()
+if fvg15_bull
+    array.push(fvg15_top, fvg15_l0)
+    array.push(fvg15_bot, fvg15_h2)
+    array.push(fvg15_dir, 1)
+    array.push(fvg15_bar, bar_index)
+    array.push(fvg15_mit, false)
+if fvg15_bear
+    array.push(fvg15_top, fvg15_l2)
+    array.push(fvg15_bot, fvg15_h0)
+    array.push(fvg15_dir, -1)
+    array.push(fvg15_bar, bar_index)
+    array.push(fvg15_mit, false)
+// mitigation: price trades into the gap (tracked while a gap can still be read: 60 bars)
+if array.size(fvg15_top) > 0
+    for j = array.size(fvg15_top) - 1 to 0
+        if bar_index - array.get(fvg15_bar, j) > 60
+            break
+        if not array.get(fvg15_mit, j) and high >= array.get(fvg15_bot, j) and low <= array.get(fvg15_top, j)
+            array.set(fvg15_mit, j, true)
+// is there a qualifying gap on the fuel side of a broken level?
+fvg15_fuel(isLong, lvl, maxDist, maxAge, matchDir, mustOpen) =>
+    bool found = false
+    int n = array.size(fvg15_top)
+    if n > 0 and not na(lvl)
+        for k = 0 to n - 1
+            int j = n - 1 - k
+            int b = array.get(fvg15_bar, j)
+            if bar_index - b > maxAge
+                break
+            if b < bar_index
+                float t = array.get(fvg15_top, j)
+                float bt = array.get(fvg15_bot, j)
+                int d = array.get(fvg15_dir, j)
+                bool dirOk = not matchDir or (isLong ? d == 1 : d == -1)
+                bool openOk = not mustOpen or not array.get(fvg15_mit, j)
+                bool posOk = isLong ? (t <= lvl and lvl - t <= maxDist) : (bt >= lvl and bt - lvl <= maxDist)
+                if dirOk and openOk and posOk
+                    found := true
+                    break
+    found
+// structure: latest confirmed pivot high (3 bars each side), burned once broken so it fires at most once
+bos_hi_p3c_pv = ta.pivothigh(high, 3, 3)
+var float bos_hi_p3c_lvl = na
+var bool bos_hi_p3c_used = true
+if not na(bos_hi_p3c_pv)
+    bos_hi_p3c_lvl := bos_hi_p3c_pv
+    bos_hi_p3c_used := close > bos_hi_p3c_pv
+bos_hi_p3c_brk = not na(bos_hi_p3c_lvl) and not bos_hi_p3c_used and close > bos_hi_p3c_lvl
+if bos_hi_p3c_brk
+    bos_hi_p3c_used := true
+// c_long_1: a fvg15 gap on the fuel side of bos_hi_p3c (max age 60 bars)
+c_long_1_dist = 120.0
+// structure: latest confirmed pivot low (3 bars each side), burned once broken so it fires at most once
+bos_lo_p3c_pv = ta.pivotlow(low, 3, 3)
+var float bos_lo_p3c_lvl = na
+var bool bos_lo_p3c_used = true
+if not na(bos_lo_p3c_pv)
+    bos_lo_p3c_lvl := bos_lo_p3c_pv
+    bos_lo_p3c_used := close < bos_lo_p3c_pv
+bos_lo_p3c_brk = not na(bos_lo_p3c_lvl) and not bos_lo_p3c_used and close < bos_lo_p3c_lvl
+if bos_lo_p3c_brk
+    bos_lo_p3c_used := true
+// c_short_1: a fvg15 gap on the fuel side of bos_lo_p3c (max age 60 bars)
+c_short_1_dist = 120.0
+
+inWindow = true
+stopDist = 30.0
+targetDist = 50.0
+
+sig_long = (bos_hi_p3c_brk and (bos_hi_p3c_brk ? fvg15_fuel(true, bos_hi_p3c_lvl, c_long_1_dist, 60, true, false) : false)) and inWindow and barstate.isconfirmed
+sig_short = (bos_lo_p3c_brk and (bos_lo_p3c_brk ? fvg15_fuel(false, bos_lo_p3c_lvl, c_short_1_dist, 60, true, false) : false)) and inWindow and barstate.isconfirmed
+longSignal  = sig_long
+shortSignal = sig_short
+
+canTrade = true
+
+// ---- entries ------------------------------------------------------------
+if longSignal and canTrade and strategy.position_size == 0
+    strategy.entry("long", strategy.long)
+if shortSignal and canTrade and strategy.position_size == 0
+    strategy.entry("short", strategy.short)
+
+// ---- exits: the client's risk rules, applied unaltered -------------------
+strategy.exit("x-long",  from_entry="long",  stop=strategy.position_avg_price - stopDist, limit=strategy.position_avg_price + targetDist)
+strategy.exit("x-short", from_entry="short", stop=strategy.position_avg_price + stopDist, limit=strategy.position_avg_price - targetDist)
+
+// ---- alerts --------------------------------------------------------------
+alertcondition(longSignal,  title="Long entry",  message="LONG {{ticker}} @ {{close}}")
+alertcondition(shortSignal, title="Short entry", message="SHORT {{ticker}} @ {{close}}")

@@ -45,6 +45,7 @@ class _PineBuilder:
         self.decls: list[str] = []
         self.plots: list[str] = []
         self.seen: set = set()
+        self.shared_exprs: dict = {}
 
     def _emit(self, primitive_name: str, params: dict, alias_stem: str, env: prim.CompileEnv) -> str:
         """Emit one primitive's fragment.
@@ -61,6 +62,13 @@ class _PineBuilder:
             return "true"
         alias = env.alias(alias_stem)
         fragment = (p.pine_indicator if self.target == "indicator" else p.pine_strategy)(params, alias, env)
+        if p.shared:
+            # Shared state is named from its normalised parameters, so the
+            # expression itself identifies it: `side: high` with and without an
+            # explicit `pivot_len: 3` is one level, declared once.
+            if fragment.expr in self.shared_exprs:
+                return fragment.expr
+            self.shared_exprs[fragment.expr] = key
         self.decls.extend(fragment.decls)
         self.plots.extend(fragment.plots)
         self.seen.add(key)

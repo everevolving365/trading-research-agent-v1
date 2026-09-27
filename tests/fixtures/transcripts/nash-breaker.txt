@@ -1,0 +1,8 @@
+So I trade MNQ and sometimes NQ, on the 5 minute chart, Chicago time. What I'm looking for is a
+break of structure. For a long, a candle has to close through the last swing high, and for a
+short it closes through the last swing low. A swing point needs 3 bars on each side, that's how
+I mark them. But I only take the break if there's fuel behind it: there has to be a 15 minute
+fair value gap sitting behind the move, within 120 points of the level I'm breaking, from the
+last 60 bars. If the gap is bullish I only use it for longs, bearish for shorts.
+My stop is 30 points and my target is 50 points, one contract. I take at most 2 trades a day.
+Commission is 2 dollars per side and I assume 1 tick of slippage.

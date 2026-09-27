@@ -1,0 +1,320 @@
+//@version=6
+indicator("NASH Breaker Block v2 ENTRY SIGNAL", overlay=true, max_labels_count=500, max_boxes_count=500, max_lines_count=500)
+
+// ==========================================
+// HTF 21 EMA Anchor Inputs
+// ==========================================
+htfSource    = input.timeframe("15", "EMA Anchor Timeframe", group="EMA Settings")
+emaPeriod    = input.int(21, "EMA Period", group="EMA Settings")
+emaColor     = input.color(color.new(#00ffbb, 100), "Line Color", group="EMA Settings")
+showEmaBg    = input.bool(true, "Show EMA Trend Background", group="EMA Settings")
+useEmaFilter = input.bool(true, "Filter Open-Break Signals via EMA", group="EMA Settings")
+
+// ==========================================
+// Open Basis Level Inputs
+// ==========================================
+tz          = input.string("America/Chicago", "Timezone", group="Open Levels")
+ltf         = input.timeframe("1", "Lower TF for exact opens (recommended: 1)", group="Open Levels")
+showLines   = input.bool(true, "Plot 5pm / 11pm / 8:30am open levels", group="Open Levels")
+showLabel   = input.bool(false, "Show label at 8:30am CT (NY Open)", group="Open Levels")
+showOpenBg  = input.bool(false, "Background tint after NY Open", group="Open Levels")
+showSignals = input.bool(true, "Show Open-Break Signals", group="Open Levels")
+breakType   = input.string("Wick/Touch", "Open-Break Detection", options=["Close", "Wick/Touch"], group="Open Levels", tooltip="Choose 'Close' for strict body closes, or 'Wick/Touch' to catch every intraday high/low pierce.")
+
+// ==========================================
+// 15m FVG Inputs
+// ==========================================
+fvg_tf     = input.timeframe("15", "FVG Master Timeframe", group="FVG Settings")
+bull_col   = input.color(color.new(#3cff00, 100), "Bullish FVG Color", group="FVG Settings")
+bear_col   = input.color(color.new(#ff1745, 100), "Bearish FVG Color", group="FVG Settings")
+mid_col    = input.color(color.new(#f77c18, 5), "50% Midline Color", group="FVG Settings")
+max_bars   = input.int(500, "Max Lookback (Bars)", group="FVG Settings")
+
+// ==========================================
+// BOS + FVG SIGNAL INPUTS  (the new engine)
+// ==========================================
+bosOn        = input.bool(true,  "Enable BOS + FVG Signal",                       group="BOS + FVG Signal")
+bosIsolate   = input.bool(true,  "Isolate — hide Open-Break triangles",           group="BOS + FVG Signal")
+bosPivotLen  = input.int(3,      "Structure Pivot Length (bars each side)",       group="BOS + FVG Signal", minval=1)
+bosBreakType = input.string("Close", "BOS Break Detection", options=["Close", "Wick/Touch"], group="BOS + FVG Signal")
+bosShowLvls  = input.bool(true,  "Plot tracked structure High / Low",             group="BOS + FVG Signal")
+bosShowLbl   = input.bool(false, "Label each signal with the broken level",       group="BOS + FVG Signal")
+
+fvgMaxDist   = input.float(120,  "Max FVG distance from break level (points)",    group="BOS + FVG Signal", minval=1)
+fvgMaxAge    = input.int(60,     "Max FVG age (chart bars)",                      group="BOS + FVG Signal", minval=1)
+fvgMatchDir  = input.bool(true,  "FVG must match direction (bull FVG for longs)", group="BOS + FVG Signal")
+fvgMustBeOpen= input.bool(false, "FVG must still be unmitigated",                 group="BOS + FVG Signal")
+
+bosUseEma    = input.bool(false, "ALSO require EMA side (off for now)",           group="BOS + FVG Signal")
+bosUseOpens  = input.bool(false, "ALSO require an open-level break (off for now)",group="BOS + FVG Signal")
+
+// Anchor times in CT
+G_H = 17, G_M = 0
+M_H = 23, M_M = 0
+N_H = 8 , N_M = 30
+
+// ==========================================
+// HTF 21 EMA Core Logic
+// ==========================================
+htfEma = request.security(syminfo.tickerid, htfSource, ta.ema(close, emaPeriod), gaps=barmerge.gaps_off)
+plot(htfEma, color=emaColor, linewidth=2, title="HTF Anchor EMA")
+
+emaBullish = close > htfEma
+emaBearish = close < htfEma
+
+bgcolor(showEmaBg ? (emaBullish ? color.new(#4caf4f, 100) : color.new(#ff5252, 100)) : na, title="EMA Trend BG")
+
+// ==========================================
+// Open Basis Core Logic
+// ==========================================
+var float globexOpen = na
+var float mnoOpen    = na
+var float nyOpen     = na
+var int   score      = na
+var bool  nyEvent    = false
+var bool  globexEvent = false
+var bool  mnoEvent    = false
+
+arr_t = request.security_lower_tf(syminfo.tickerid, ltf, time)
+arr_o = request.security_lower_tf(syminfo.tickerid, ltf, open)
+
+nyEvent := false
+globexEvent := false
+mnoEvent    := false
+
+if array.size(arr_t) > 0
+    for i = 0 to array.size(arr_t) - 1
+        t = array.get(arr_t, i)
+        o = array.get(arr_o, i)
+
+        hr = hour(t, tz)
+        mn = minute(t, tz)
+
+        if (hr == G_H and mn == G_M)
+            globexOpen := o
+            mnoOpen    := na
+            nyOpen     := na
+            score      := na
+            globexEvent := true
+
+        if (hr == M_H and mn == M_M)
+            mnoOpen := o
+            mnoEvent := true
+
+        if (hr == N_H and mn == N_M)
+            nyOpen := o
+            if not na(globexOpen) and not na(mnoOpen) and not na(nyOpen)
+                s1 = mnoOpen > globexOpen ? 1 : -1
+                s2 = nyOpen  > mnoOpen    ? 1 : -1
+                score := s1 + s2
+            nyEvent := true
+
+bullStrong = (score == 2)
+bearStrong = (score == -2)
+mixed      = (score == 0 or na(score))
+
+plot(showLines ? globexOpen : na, "5:00pm CT (Globex Open)", style=plot.style_linebr, linewidth=2)
+plot(showLines ? mnoOpen    : na, "11:00pm CT (MNO)",        style=plot.style_linebr, linewidth=2)
+plot(showLines ? nyOpen     : na, "8:30am CT (NY Open)",     style=plot.style_linebr, linewidth=2)
+
+if showLabel and nyEvent and not na(globexOpen) and not na(mnoOpen) and not na(nyOpen)
+    txt = bullStrong ? "NY OPEN: BULLS STRONG\n(5pm < 11pm < 8:30)" : bearStrong ? "NY OPEN: BEARS STRONG\n(5pm > 11pm > 8:30)" : "NY OPEN: MIXED / NO EDGE\n(hierarchy not clean)"
+    txt += "\n5pm: "  + str.tostring(globexOpen, format.mintick)
+    txt += "\n11pm: " + str.tostring(mnoOpen, format.mintick)
+    txt += "\n8:30: " + str.tostring(nyOpen, format.mintick)
+    label.new(bar_index, nyOpen, txt, style=label.style_label_down, textalign=text.align_left)
+
+var int regime = 0
+if nyEvent
+    regime := bullStrong ? 1 : bearStrong ? -1 : 0
+if not na(globexOpen) and array.size(arr_t) > 0
+    if na(score) and na(mnoOpen) and na(nyOpen)
+        regime := 0
+
+bgcolor(showOpenBg ? (regime == 1 ? color.new(#4caf4f, 100) : regime == -1 ? color.new(#ff5252, 100) : na) : na, title="Open Basis BG")
+
+// ==========================================
+// Immediate Breakout Logic (EMA Filtered)
+// ==========================================
+emaLongCondition  = useEmaFilter ? emaBullish : true
+emaShortCondition = useEmaFilter ? emaBearish : true
+
+f_break_long(lvl) =>
+    if na(lvl)
+        false
+    else
+        isCloseBreak = close[1] < lvl and close > lvl
+        isWickBreak  = close[1] <= lvl and high > lvl
+        breakType == "Close" ? isCloseBreak : isWickBreak
+
+f_break_short(lvl) =>
+    if na(lvl)
+        false
+    else
+        isCloseBreak = close[1] > lvl and close < lvl
+        isWickBreak  = close[1] >= lvl and low < lvl
+        breakType == "Close" ? isCloseBreak : isWickBreak
+
+breakGlobexLong = f_break_long(globexOpen)
+breakMnoLong    = f_break_long(mnoOpen)
+breakNyLong     = f_break_long(nyOpen)
+longSignal      = showSignals and emaLongCondition and (breakGlobexLong or breakMnoLong or breakNyLong)
+
+breakGlobexShort = f_break_short(globexOpen)
+breakMnoShort    = f_break_short(mnoOpen)
+breakNyShort     = f_break_short(nyOpen)
+shortSignal      = showSignals and emaShortCondition and (breakGlobexShort or breakMnoShort or breakNyShort)
+
+plotshape(longSignal  and not bosIsolate, title="Long Breakout",  style=shape.triangleup,   location=location.belowbar, color=color.green, size=size.small)
+plotshape(shortSignal and not bosIsolate, title="Short Breakout", style=shape.triangledown, location=location.abovebar, color=color.red,   size=size.small)
+
+// ==========================================
+// 15m Fair Value Gap Logic
+// ==========================================
+[h0, l0, h2, l2, b_idx] = request.security(syminfo.tickerid, fvg_tf, [high[0], low[0], high[2], low[2], bar_index])
+
+bull_fvg = h2 < l0
+bear_fvg = l2 > h0
+
+var array<box>   boxes     = array.new<box>()
+var array<float> tops      = array.new<float>()
+var array<float> bots      = array.new<float>()
+var array<bool>  mitigated = array.new<bool>()
+var array<int>   fvgDir    = array.new<int>()    // 1 = bullish, -1 = bearish
+var array<int>   fvgBar    = array.new<int>()    // chart bar_index at creation
+
+is_new_15m_bar = ta.change(b_idx) != 0
+
+if is_new_15m_bar
+    if bull_fvg
+        _top = l0
+        _bot = h2
+        _mid = (_top + _bot) / 2
+        b = box.new(bar_index, _top, bar_index + 1, _bot, bgcolor=bull_col, border_color=na)
+        line.new(bar_index, _mid, bar_index + 10, _mid, color=mid_col, width=1)
+        array.push(boxes, b)
+        array.push(tops, _top)
+        array.push(bots, _bot)
+        array.push(mitigated, false)
+        array.push(fvgDir, 1)
+        array.push(fvgBar, bar_index)
+
+    if bear_fvg
+        _top = l2
+        _bot = h0
+        _mid = (_top + _bot) / 2
+        b = box.new(bar_index, _top, bar_index + 1, _bot, bgcolor=bear_col, border_color=na)
+        line.new(bar_index, _mid, bar_index + 10, _mid, color=mid_col, width=1)
+        array.push(boxes, b)
+        array.push(tops, _top)
+        array.push(bots, _bot)
+        array.push(mitigated, false)
+        array.push(fvgDir, -1)
+        array.push(fvgBar, bar_index)
+
+if array.size(boxes) > 0
+    for i = array.size(boxes) - 1 to 0
+        b      = array.get(boxes, i)
+        is_mit = array.get(mitigated, i)
+        top_v  = array.get(tops, i)
+        bot_v  = array.get(bots, i)
+
+        if not is_mit
+            box.set_right(b, bar_index + 1)
+            if high >= bot_v and low <= top_v
+                array.set(mitigated, i, true)
+                box.set_bgcolor(b, color.new(color.gray, 90))
+
+// ==========================================
+// BOS + FVG SIGNAL ENGINE
+// ==========================================
+
+// --- Does a qualifying FVG sit on the correct side of the break level? ---
+f_hasFuel(isLong, lvl) =>
+    bool found = false
+    int n = array.size(tops)
+    if n > 0 and not na(lvl)
+        for k = 0 to n - 1
+            int i = n - 1 - k
+            int _bar = array.get(fvgBar, i)
+            if bar_index - _bar > fvgMaxAge
+                break
+            if _bar < bar_index
+                float _top = array.get(tops, i)
+                float _bot = array.get(bots, i)
+                int   _dir = array.get(fvgDir, i)
+                bool  _mit = array.get(mitigated, i)
+
+                bool dirOk  = not fvgMatchDir or (isLong ? _dir == 1 : _dir == -1)
+                bool openOk = not fvgMustBeOpen or not _mit
+                bool posOk  = isLong ? (_top <= lvl and (lvl - _top) <= fvgMaxDist) : (_bot >= lvl and (_bot - lvl) <= fvgMaxDist)
+
+                if dirOk and openOk and posOk
+                    found := true
+                    break
+    found
+
+// --- Track the mini range: most recent confirmed pivot high / low ---
+ph = ta.pivothigh(high, bosPivotLen, bosPivotLen)
+pl = ta.pivotlow(low,  bosPivotLen, bosPivotLen)
+
+var float bosHigh  = na
+var float bosLow   = na
+var bool  highUsed = true
+var bool  lowUsed  = true
+
+if not na(ph)
+    bosHigh  := ph
+    highUsed := close > ph
+if not na(pl)
+    bosLow  := pl
+    lowUsed := close < pl
+
+plot(bosShowLvls ? bosHigh : na, "BOS Range High", color=color.new(color.aqua, 35), style=plot.style_linebr, linewidth=1)
+plot(bosShowLvls ? bosLow  : na, "BOS Range Low",  color=color.new(color.aqua, 35), style=plot.style_linebr, linewidth=1)
+
+// --- The break itself ---
+brokeUp = not na(bosHigh) and not highUsed and (bosBreakType == "Close" ? close > bosHigh : high > bosHigh)
+brokeDn = not na(bosLow)  and not lowUsed  and (bosBreakType == "Close" ? close < bosLow  : low  < bosLow)
+
+// --- Optional add-on filters (both OFF by default) ---
+bosEmaLong  = bosUseEma   ? emaBullish : true
+bosEmaShort = bosUseEma   ? emaBearish : true
+bosOpnLong  = bosUseOpens ? (breakGlobexLong  or breakMnoLong  or breakNyLong)  : true
+bosOpnShort = bosUseOpens ? (breakGlobexShort or breakMnoShort or breakNyShort) : true
+
+// --- Final signal: break of structure + fair value gap on the fuel side ---
+bosLong  = bosOn and brokeUp and f_hasFuel(true,  bosHigh) and bosEmaLong  and bosOpnLong
+bosShort = bosOn and brokeDn and f_hasFuel(false, bosLow)  and bosEmaShort and bosOpnShort
+
+// --- Burn the level once broken, valid or not, so it can't re-fire ---
+var float lastLongLvl  = na
+var float lastShortLvl = na
+if bosLong
+    lastLongLvl := bosHigh
+if bosShort
+    lastShortLvl := bosLow
+if brokeUp
+    highUsed := true
+if brokeDn
+    lowUsed := true
+
+plotshape(bosLong,  title="BOS+FVG Long",  style=shape.diamond, location=location.belowbar, color=color.new(#00e676, 0), size=size.small)
+plotshape(bosShort, title="BOS+FVG Short", style=shape.diamond, location=location.abovebar, color=color.new(#ff1744, 0), size=size.small)
+
+if bosShowLbl and bosLong
+    label.new(bar_index, low, "L " + str.tostring(lastLongLvl, format.mintick), style=label.style_label_up, color=color.new(#00e676, 20), textcolor=color.black, size=size.tiny)
+if bosShowLbl and bosShort
+    label.new(bar_index, high, "S " + str.tostring(lastShortLvl, format.mintick), style=label.style_label_down, color=color.new(#ff1744, 20), textcolor=color.white, size=size.tiny)
+
+// ==========================================
+// Alerts
+// ==========================================
+alertcondition(globexEvent, "5pm Open",      "5pm Open")
+alertcondition(mnoEvent,    "Midnight Open", "Midnight Open")
+alertcondition(nyEvent,     "NY Open",       "NY Open")
+alertcondition(is_new_15m_bar and (bull_fvg or bear_fvg), "FVG Appeared", "FVG Appeared")
+alertcondition(longSignal,  "Key LVL Bullish Breakout",  "Price broke up through an anchor open level (Long).")
+alertcondition(shortSignal, "Key LVL Bearish Breakout", "Price broke down through an anchor open level (Short).")
+alertcondition(bosLong,  "Long Entry",  "Long Entry")
+alertcondition(bosShort, "Short Entry", "Short Entry")

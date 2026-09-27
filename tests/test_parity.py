@@ -182,3 +182,28 @@ def test_strategy_script_signals_match_the_indicator(spec, small_bars):
     assert (
         np.asarray(indicator["shortSignal"], dtype=bool) == np.asarray(strategy["shortSignal"], dtype=bool)
     ).all()
+
+
+def test_no_cross_on_the_first_bar_the_slow_average_exists():
+    """Pine's ta.crossover needs a valid previous bar. On the first bar where the
+    slow average exists there is nothing to cross from, so nothing fires -- the
+    Python engine once counted it as a cross (caught on an option contract)."""
+    import pandas as pd
+
+    from ee_agent.data.bars import Bars
+    from ee_agent.spec.primitives import CompileEnv, Runtime, get
+
+    closes = [100.0 - i for i in range(20)] + [200.0] * 10  # fast jumps above slow on bar 20
+    ts = pd.date_range("2026-03-02 14:30", periods=len(closes), freq="5min", tz="UTC")
+    df = pd.DataFrame({"ts": ts, "open": closes, "high": closes, "low": closes, "close": closes, "volume": 1.0})
+    bars = Bars(symbol="MNQ", timeframe="5m", df=df)
+    node = get("ma_cross").python({"fast": 9, "slow": 21, "direction": "up"}, CompileEnv())
+    node.prepare(Runtime(bars))
+    source = """//@version=5
+f = ta.ema(close, 9)
+s = ta.ema(close, 21)
+x = ta.crossover(f, s)
+"""
+    pine = np.asarray(run_pine(source, bars, ["x"])["x"], dtype=bool)
+    assert not node.series[20] and not pine[20]
+    assert (node.series == pine).all()

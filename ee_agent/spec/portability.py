@@ -26,6 +26,26 @@ from ee_agent.spec.model import Assumption, Distance, StrategySpec
 
 SCALE_FREE_UNITS = {"percent", "atr", "stdev", "bps"}
 
+#: Condition parameters that are price distances. A strategy's entry rule can
+#: carry a distance just like its stop does (NASH's "gap within 120 points of
+#: the level"), and 120 points means something different on every instrument.
+CONDITION_DISTANCE_KEYS = ("max_distance",)
+
+
+def condition_distances(spec: StrategySpec) -> list[tuple[str, object, str, Distance]]:
+    """(field label, condition, parameter key, distance) for every distance
+    parameter inside a signal condition."""
+    from ee_agent.spec.primitives import _distance_param
+
+    out = []
+    for rule in [*spec.signals.entry, *spec.signals.exit]:
+        for cond in rule.conditions:
+            for key in CONDITION_DISTANCE_KEYS:
+                if key in cond.params:
+                    unit, value = _distance_param(cond.params[key])
+                    out.append((f"{rule.id}.{cond.type}.{key}", cond, key, Distance(type=unit, value=value)))
+    return out
+
 
 @dataclass
 class ConversionRow:
@@ -40,7 +60,7 @@ def is_portable(spec: StrategySpec) -> bool:
     for dist in (spec.risk.stop, spec.risk.target, spec.risk.trail, spec.risk.breakeven_at):
         if dist is not None and dist.type not in SCALE_FREE_UNITS:
             return False
-    return True
+    return all(d.type in SCALE_FREE_UNITS for _l, _c, _k, d in condition_distances(spec))
 
 
 def portability_note(spec: StrategySpec) -> str | None:
@@ -53,7 +73,9 @@ def portability_note(spec: StrategySpec) -> str | None:
             inst = get_instrument(symbol)
         except KeyError:
             continue
-        for label, dist in (("stop", spec.risk.stop), ("target", spec.risk.target)):
+        distances = [("stop", spec.risk.stop), ("target", spec.risk.target)]
+        distances += [(label, d) for label, _c, _k, d in condition_distances(spec)]
+        for label, dist in distances:
             if dist is None or dist.type in SCALE_FREE_UNITS:
                 continue
             ticks = dist.value / inst.tick_size if dist.type == "points" else dist.value
@@ -65,7 +87,7 @@ def portability_note(spec: StrategySpec) -> str | None:
     if not rows:
         return None
     return (
-        "This spec's risk is in units that do NOT mean the same thing on every instrument:\n"
+        "This spec's distances are in units that do NOT mean the same thing on every instrument:\n"
         + "\n".join(rows)
         + "\nRunning it unedited across these instruments changes the strategy. "
         "`ee-agent spec portable <spec>` measures the equivalent ATR multiples and shows them "
@@ -126,6 +148,24 @@ def to_atr_units(
                 ),
             )
         )
+    for label, cond, key, dist in condition_distances(out):
+        if dist.type in ("atr",):
+            continue
+        # condition distances in ATR are always ATR(14) -- see primitives._distance_series
+        multiple = round(measure_atr_multiple(bars, dist, 14), 4)
+        cond.params[key] = {"type": "atr", "value": multiple}
+        rows.append(
+            ConversionRow(
+                field=label,
+                original=f"{dist.value} {dist.type}",
+                converted=f"{multiple} ATR(14)",
+                reference_symbol=bars.symbol,
+                note=(
+                    f"measured against the median ATR(14) of {bars.symbol} "
+                    f"{bars.timeframe} over {len(bars):,} bars"
+                ),
+            )
+        )
     if rows:
         out.assumptions.append(
             Assumption(
@@ -152,8 +192,9 @@ def to_atr_units(
 def conversion_table(rows: list[ConversionRow]) -> str:
     if not rows:
         return "Nothing to convert: this spec is already scale-free."
-    lines = ["  field            original          becomes                  measured on"]
+    width = max(16, *(len(r.field) for r in rows))
+    lines = [f"  {'field':<{width}} {'original':<17} {'becomes':<24} measured on"]
     for r in rows:
-        lines.append(f"  {r.field:<16} {r.original:<17} {r.converted:<24} {r.reference_symbol}")
+        lines.append(f"  {r.field:<{width}} {r.original:<17} {r.converted:<24} {r.reference_symbol}")
     lines.append("  Nothing has been changed. Approve with: ee-agent spec portable <spec> --approve")
     return "\n".join(lines)
